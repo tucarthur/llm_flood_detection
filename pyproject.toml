@@ -1,0 +1,25 @@
+[project]
+name = "llm-flood-detection"
+version = "0.1.0"
+description = "RAG-grounded LLM agent framework for flood event classification (research benchmark)"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.40.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "requests>=2.31.0",
+    "scikit-learn>=1.4.0",
+    "chromadb>=0.5.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "matplotlib>=3.8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["data*", "knowledge_base*", "agent*", "baselines*", "eval*"]
