@@ -6,15 +6,11 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
 from dotenv import load_dotenv
 from tqdm import tqdm
 
 from agent.classifier import ClassifierAgent
 from agent.retrieval import KnowledgeBaseRetriever
-from agent.tools import StructuredDataTools
-
-USGS_CSV = Path(__file__).parent.parent / "data" / "raw" / "usgs_daily_values.csv"
 
 
 def main():
@@ -22,7 +18,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="Path to examples JSONL")
     parser.add_argument("--out", required=True, help="Path to write results JSONL")
-    parser.add_argument("--no-tools", action="store_true", help="Ablation: disable structured-data tool calls")
     parser.add_argument("--no-rag", action="store_true", help="Ablation: disable RAG retrieval")
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     args = parser.parse_args()
@@ -31,12 +26,9 @@ def main():
     if args.limit:
         examples = examples[: args.limit]
 
-    structured_tools = StructuredDataTools(pd.read_csv(USGS_CSV, dtype={"site_id": str}))
     retriever = KnowledgeBaseRetriever()
     agent = ClassifierAgent(
-        structured_tools,
         retriever,
-        use_tools=not args.no_tools,
         use_rag=not args.no_rag,
     )
 

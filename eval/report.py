@@ -18,11 +18,12 @@ def summarize(name: str, path: str) -> dict:
         "accuracy": round(metrics["accuracy"], 3),
         "macro_recall": round(metrics["macro_recall"], 3),
         "macro_f1": round(metrics["macro_f1"], 3),
-        "missed_active_flood_rate": metrics["missed_active_flood_rate"],
+        "missed_flood_rate": metrics["missed_flood_rate"],
         "false_alarm_rate": metrics["false_alarm_rate"],
+        "mean_ordinal_error": round(metrics["mean_ordinal_error"], 3) if metrics["mean_ordinal_error"] is not None else None,
     }
     if calibration:
-        summary["brier_score_active_flood"] = round(calibration["brier_score_active_flood"], 3)
+        summary["brier_score_flood"] = round(calibration["brier_score_flood"], 3)
     return summary
 
 
@@ -35,19 +36,14 @@ def main():
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)
-    run_files = {
-        "threshold_baseline": results_dir / "threshold_baseline.jsonl",
-        "gbt_baseline": results_dir / "gbt_baseline.jsonl",
-        "logreg_baseline": results_dir / "logreg_baseline.jsonl",
-        "agent_full": results_dir / "sample_agent.jsonl",
-        "agent_no_tools": results_dir / "agent_no_tools.jsonl",
-        "agent_no_rag": results_dir / "agent_no_rag.jsonl",
-        "agent_zero_shot": results_dir / "agent_zero_shot.jsonl",
-    }
+    # Baselines aren't built yet for this track (pending where CLIP/embedding
+    # training will run) -- include any results files that happen to exist so
+    # this doesn't need editing again once they are.
+    run_files = {p.stem: p for p in sorted(results_dir.glob("*.jsonl"))} if results_dir.exists() else {}
 
     summaries = []
     for name, path in run_files.items():
-        if not path.exists():
+        if not path.exists() or name == "comparison_report":
             continue
         summaries.append(summarize(name, str(path)))
         if "agent" in name:
@@ -62,15 +58,16 @@ def main():
     with open(args.out, "w") as f:
         json.dump(summaries, f, indent=2)
 
-    header = f"{'name':<20}{'n':>5}{'acc':>8}{'macro_recall':>14}{'macro_f1':>10}{'missed_flood':>14}{'false_alarm':>13}{'faithful':>10}"
+    header = f"{'name':<22}{'n':>5}{'acc':>8}{'macro_recall':>14}{'macro_f1':>10}{'missed_flood':>14}{'false_alarm':>13}{'ord_err':>9}{'faithful':>10}"
     print(header)
     for s in summaries:
-        missed = round(s["missed_active_flood_rate"], 3) if s["missed_active_flood_rate"] is not None else "-"
+        missed = round(s["missed_flood_rate"], 3) if s["missed_flood_rate"] is not None else "-"
         false_alarm = round(s["false_alarm_rate"], 3) if s["false_alarm_rate"] is not None else "-"
+        ord_err = s["mean_ordinal_error"] if s["mean_ordinal_error"] is not None else "-"
         faithful = s.get("mean_faithfulness_rate", "-")
         print(
-            f"{s['name']:<20}{s['n']:>5}{s['accuracy']:>8}{s['macro_recall']:>14}{s['macro_f1']:>10}"
-            f"{missed:>14}{false_alarm:>13}{faithful:>10}"
+            f"{s['name']:<22}{s['n']:>5}{s['accuracy']:>8}{s['macro_recall']:>14}{s['macro_f1']:>10}"
+            f"{missed:>14}{false_alarm:>13}{ord_err:>9}{faithful:>10}"
         )
     print(f"\nWrote full report to {args.out}")
 

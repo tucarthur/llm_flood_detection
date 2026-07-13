@@ -1,58 +1,60 @@
-def build_system_prompt(use_tools: bool, use_rag: bool) -> str:
+def build_system_prompt(use_rag: bool) -> str:
     base = (
-        "You are a flood classification agent. Given a location, a time window, "
-        "and any available crisis-text reports for that window, determine whether a "
-        "flood was occurring.\n\n"
+        "You are a water-level classification agent for a fixed river camera at "
+        "Mineirinho Creek (Sao Carlos, Brazil). You will be shown one photograph from "
+        "the camera, looking down into a concrete drainage canal from a road bridge, "
+        "with a grass embankment above the canal wall on the far bank.\n\n"
     )
     steps = []
-    if use_tools:
-        steps.append(
-            "Call get_site_baseline and get_gauge_time_series to see how far the current "
-            "reading deviates from the site's pre-event baseline."
-        )
-    else:
-        base += (
-            "Structured USGS gauge data for this example is provided directly in the "
-            "user message (already fetched) -- read it carefully rather than calling a tool.\n\n"
-        )
     if use_rag:
         steps.append(
             "Call retrieve_flood_knowledge at least once to ground your classification in "
-            "the documented flood-stage criteria and to check for a matching historical analog."
+            "the documented low/medium/high/flood criteria for this specific site."
         )
     steps.append(
-        "Weigh the text reports (if any) as corroborating or contradicting evidence -- text "
-        "alone, without a structured signal, is weaker evidence of an active flood."
+        "Judge severity primarily by how much concrete wall is visible between the "
+        "water surface and the grass/wall-top line -- a large exposed wall margin means "
+        "low, little or no margin means high, and water actually touching the grass "
+        "above the wall means flood. This is a specific physical threshold, not a vague "
+        "impression of how much water is visible."
     )
-    if steps:
-        base += "Before answering:\n" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps)) + "\n\n"
+    steps.append(
+        "If the image is a nighttime shot with heavy glare from the streetlight in "
+        "frame, say so explicitly in your rationale and lower your confidence rather "
+        "than guessing with false certainty."
+    )
+    base += "Before answering:\n" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps)) + "\n\n"
     base += (
         "When you are done gathering evidence, call submit_classification exactly once with "
-        "your final answer. Your rationale must cite the specific evidence (tool outputs, "
-        "retrieved passages, and/or structured data provided) you grounded on -- do not state "
-        "a classification you cannot trace back to evidence."
+        "your final answer. Your rationale must cite specific visual details you observed "
+        "(and retrieved passages, if you used them) -- do not state a classification you "
+        "cannot trace back to something visible in the image or explicitly retrieved. Given "
+        "how rare anything other than 'low' is at this site, do not let that rarity bias you "
+        "toward under-calling a higher category when the visual evidence actually supports it."
     )
     return base
 
+
 SUBMIT_CLASSIFICATION_TOOL_SCHEMA = {
     "name": "submit_classification",
-    "description": "Submit the final flood classification for this example. Call exactly once, after gathering evidence.",
+    "description": "Submit the final water-level classification for this image. Call exactly once, after gathering evidence.",
     "input_schema": {
         "type": "object",
         "properties": {
             "classification": {
                 "type": "string",
-                "enum": ["no_flood", "flood_watch", "active_flood"],
-                "description": "no_flood: readings near baseline, no credible flood evidence. "
-                "flood_watch: elevated/rising readings or credible reports, but not clearly at flood stage. "
-                "active_flood: readings consistent with NWS minor/moderate/major flood stage and/or corroborated reports.",
+                "enum": ["low", "medium", "high", "flood"],
+                "description": "low: large exposed concrete wall margin between water and grass/wall-top -- normal/dry-weather level. "
+                "medium: water has risen but a visible wall margin remains. "
+                "high: little or no wall margin remains, but water has not yet reached the grass. "
+                "flood: water is above the top of the wall and touching the grass bank -- a specific physical threshold, not just \"a lot of water\".",
             },
             "confidence": {"type": "number", "description": "0.0-1.0 confidence in the classification."},
-            "rationale": {"type": "string", "description": "Explanation citing specific tool outputs / retrieved passages."},
+            "rationale": {"type": "string", "description": "Explanation citing specific visual details and/or retrieved passages."},
             "cited_evidence": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Short quotes/refs to the specific tool results or retrieved passage titles used.",
+                "description": "Short descriptions of the specific visual details and/or retrieved passage titles used.",
             },
         },
         "required": ["classification", "confidence", "rationale", "cited_evidence"],
@@ -60,26 +62,11 @@ SUBMIT_CLASSIFICATION_TOOL_SCHEMA = {
 }
 
 
-def build_user_prompt(example: dict, structured_dump: dict | None = None) -> str:
-    """structured_dump: when the agent runs in no-tools ablation mode, the same
-    structured data the tool-calling agent would have fetched is dumped here as text
-    instead, so the ablation isolates "agentic tool orchestration" vs. "single-shot
-    prompt with the same information available" -- not "has data" vs. "has no data"."""
-    text_reports = example.get("text_reports") or []
-    reports_block = (
-        "\n".join(f"- {t}" for t in text_reports) if text_reports else "(no text reports available for this window)"
+def build_user_text_block(example: dict) -> str:
+    text = (
+        f"Timestamp: {example['datetime']} (season {example['season']}, "
+        f"{'nighttime' if example['is_night'] else 'daytime'} shot)\n"
+        f"Camera: {example['place']}\n"
+        "\nClassify the water level visible in this image (low / medium / high / flood)."
     )
-    prompt = f"""Location/event: {example['event']} -- site {example['site_id']} ({example.get('site_name', '')})
-Time window: {example['start_date']} to {example['end_date']}
-Target date to classify: {example['target_date']}
-
-Text reports for this window:
-{reports_block}
-"""
-    if structured_dump is not None:
-        prompt += f"""
-Structured USGS gauge data (already fetched for you -- no tool call needed):
-{structured_dump}
-"""
-    prompt += "\nDetermine the flood classification for the target date."
-    return prompt
+    return text
