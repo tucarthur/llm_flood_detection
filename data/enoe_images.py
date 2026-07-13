@@ -37,6 +37,21 @@ KAGGLE_PREFIX = "enoe/enoe2/"  # CSV `path` values are relative to this prefix i
 
 LABELS = ["low", "medium", "high", "flood"]
 
+# Leave-one-season-out CV splits, matching the source paper's own split table
+# exactly (Split 1 tests on 2018-2019, ... Split 4 tests on 2021-2022) -- order
+# matters here only for split numbering, not for correctness of the fold
+# contents, since with exactly 4 seasons there is only one way to hold out
+# each one in turn.
+SEASONS = ["2018-2019", "2019-2020", "2020-2021", "2021-2022"]
+
+
+def season_splits() -> list[dict]:
+    """Return the 4 leave-one-season-out folds as [{split, test_season, train_seasons}, ...]."""
+    return [
+        {"split": i + 1, "test_season": test, "train_seasons": [s for s in SEASONS if s != test]}
+        for i, test in enumerate(SEASONS)
+    ]
+
 
 def season_for(dt: pd.Timestamp) -> str:
     """Nov-Feb rainy season, matching the source paper's own definition -- a
