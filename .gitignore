@@ -6,6 +6,8 @@ venv/
 data/raw/
 data/processed/
 knowledge_base/index/
+knowledge_base/image_bank_index/
+knowledge_base/image_bank_backup/
 *.egg-info/
 .pytest_cache/
 .DS_Store
