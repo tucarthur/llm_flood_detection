@@ -20,6 +20,11 @@ dev = [
     "pytest>=8.0.0",
     "matplotlib>=3.8.0",
 ]
+image-rag = [
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "pillow>=10.0.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["data*", "knowledge_base*", "agent*", "baselines*", "eval*"]

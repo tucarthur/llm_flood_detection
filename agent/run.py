@@ -18,7 +18,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="Path to examples JSONL")
     parser.add_argument("--out", required=True, help="Path to write results JSONL")
-    parser.add_argument("--no-rag", action="store_true", help="Ablation: disable RAG retrieval")
+    parser.add_argument("--no-rag", action="store_true", help="Ablation: disable text RAG retrieval")
+    parser.add_argument("--image-rag", action="store_true", help="Ablation: enable image-exemplar RAG retrieval")
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     args = parser.parse_args()
 
@@ -27,9 +28,17 @@ def main():
         examples = examples[: args.limit]
 
     retriever = KnowledgeBaseRetriever()
+    image_retriever = None
+    if args.image_rag:
+        from agent.image_retrieval import ImageBankRetriever  # lazy: avoids requiring torch unless used
+
+        image_retriever = ImageBankRetriever()
+
     agent = ClassifierAgent(
         retriever,
         use_rag=not args.no_rag,
+        image_retriever=image_retriever,
+        use_image_rag=args.image_rag,
     )
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)

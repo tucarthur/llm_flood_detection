@@ -11,6 +11,7 @@ from pathlib import Path
 
 import anthropic
 
+from agent.image_retrieval import RETRIEVE_SIMILAR_EXAMPLES_TOOL_SCHEMA, ImageBankRetriever
 from agent.prompts import SUBMIT_CLASSIFICATION_TOOL_SCHEMA, build_system_prompt, build_user_text_block
 from agent.retrieval import RETRIEVAL_TOOL_SCHEMA, KnowledgeBaseRetriever
 
@@ -30,16 +31,24 @@ class ClassifierAgent:
         self,
         retriever: KnowledgeBaseRetriever,
         use_rag: bool = True,
+        image_retriever: ImageBankRetriever | None = None,
+        use_image_rag: bool = False,
         client: anthropic.Anthropic | None = None,
     ):
         self.retriever = retriever
         self.use_rag = use_rag
+        self.image_retriever = image_retriever
+        self.use_image_rag = use_image_rag
+        if use_image_rag and image_retriever is None:
+            raise ValueError("use_image_rag=True requires an image_retriever")
         self.client = client or anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     def _tool_schemas(self) -> list[dict]:
         schemas = [SUBMIT_CLASSIFICATION_TOOL_SCHEMA]
         if self.use_rag:
             schemas = [RETRIEVAL_TOOL_SCHEMA] + schemas
+        if self.use_image_rag:
+            schemas = [RETRIEVE_SIMILAR_EXAMPLES_TOOL_SCHEMA] + schemas
         return schemas
 
     def classify(self, example: dict) -> dict:
@@ -47,7 +56,7 @@ class ClassifierAgent:
         text_block = {"type": "text", "text": build_user_text_block(example)}
         messages = [{"role": "user", "content": [image_block, text_block]}]
         tools = self._tool_schemas()
-        system_prompt = build_system_prompt(self.use_rag)
+        system_prompt = build_system_prompt(self.use_rag, self.use_image_rag)
         tool_call_log = []
 
         for _ in range(MAX_TURNS):
@@ -80,13 +89,23 @@ class ClassifierAgent:
             for block in response.content:
                 if block.type != "tool_use":
                     continue
-                result = self.retriever.dispatch(block.name, block.input)
+                if block.name == "retrieve_similar_examples":
+                    result, image_blocks = self.image_retriever.dispatch(
+                        block.name,
+                        block.input,
+                        image_path=example["image_path"],
+                        exclude_season=example["season"],
+                    )
+                    content = [{"type": "text", "text": json.dumps(result)}] + image_blocks
+                else:
+                    result = self.retriever.dispatch(block.name, block.input)
+                    content = json.dumps(result)
                 tool_call_log.append({"tool": block.name, "input": block.input, "result": result})
                 tool_results.append(
                     {
                         "type": "tool_result",
                         "tool_use_id": block.id,
-                        "content": json.dumps(result),
+                        "content": content,
                     }
                 )
             messages.append({"role": "user", "content": tool_results})
