@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from agent.classifier import ClassifierAgent
+from agent.classifier import DEFAULT_BASE_URL, DEFAULT_MODEL, ClassifierAgent
 from agent.retrieval import KnowledgeBaseRetriever
 
 
@@ -21,6 +21,12 @@ def main():
     parser.add_argument("--no-rag", action="store_true", help="Ablation: disable text RAG retrieval")
     parser.add_argument("--image-rag", action="store_true", help="Ablation: enable image-exemplar RAG retrieval")
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
+    parser.add_argument(
+        "--model", default=DEFAULT_MODEL, help="Model name vLLM was launched with (or set VLLM_MODEL)"
+    )
+    parser.add_argument(
+        "--base-url", default=DEFAULT_BASE_URL, help="vLLM OpenAI-compatible endpoint (or set VLLM_BASE_URL)"
+    )
     args = parser.parse_args()
 
     examples = [json.loads(line) for line in open(args.input)]
@@ -39,6 +45,8 @@ def main():
         use_rag=not args.no_rag,
         image_retriever=image_retriever,
         use_image_rag=args.image_rag,
+        model=args.model,
+        base_url=args.base_url,
     )
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
