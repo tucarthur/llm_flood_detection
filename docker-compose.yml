@@ -1,0 +1,35 @@
+# Run this on the GPU machine that will actually serve the model -- not viable on a
+# weak/no GPU dev machine. Exposes vLLM's OpenAI-compatible API on VLLM_PORT (default
+# 8000), bound to all interfaces so it's reachable from other machines
+# (agent.run's --base-url / VLLM_BASE_URL just needs to point at <that machine>:PORT).
+
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: llm_flood_detection-vllm
+    restart: unless-stopped
+    ports:
+      - "${VLLM_PORT:-8000}:8000"
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN:-}
+    volumes:
+      # persists downloaded weights across container restarts/recreations --
+      # without this every `docker compose up` re-downloads the model.
+      - huggingface_cache:/root/.cache/huggingface
+    ipc: host  # vLLM's tensor-parallel/shared-memory ops need this, not just a nicety
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      --model ${VLLM_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}
+      --enable-auto-tool-choice
+      --tool-call-parser hermes
+      --host 0.0.0.0
+      --port 8000
+
+volumes:
+  huggingface_cache:
