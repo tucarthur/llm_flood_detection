@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from agent.classifier import DEFAULT_BASE_URL, DEFAULT_MODEL, ClassifierAgent
+from agent.classifier import ClassifierAgent
 from agent.retrieval import KnowledgeBaseRetriever
 
 
@@ -20,20 +20,40 @@ def main():
     parser.add_argument("--out", required=True, help="Path to write results JSONL")
     parser.add_argument("--no-rag", action="store_true", help="Ablation: disable text RAG retrieval")
     parser.add_argument("--image-rag", action="store_true", help="Ablation: enable image-exemplar RAG retrieval")
+    parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Ablation floor: one image+prompt completion per example, no tools/RAG at all",
+    )
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     parser.add_argument(
-        "--model", default=DEFAULT_MODEL, help="Model name vLLM was launched with (or set VLLM_MODEL)"
+        "--provider",
+        choices=["vllm", "gemini"],
+        default="vllm",
+        help="Inference backend: local vLLM server or the Gemini API (needs GEMINI_API_KEY)",
     )
     parser.add_argument(
-        "--base-url", default=DEFAULT_BASE_URL, help="vLLM OpenAI-compatible endpoint (or set VLLM_BASE_URL)"
+        "--model", default="", help="Model name (defaults: VLLM_MODEL for vllm, GEMINI_MODEL or gemini-3.5-flash for gemini)"
+    )
+    parser.add_argument(
+        "--base-url", default="", help="OpenAI-compatible endpoint override (defaults per provider)"
+    )
+    parser.add_argument(
+        "--rpm",
+        type=float,
+        default=None,
+        help="Throttle: max API requests/minute (default: 5 for gemini free tier, unthrottled for vllm)",
     )
     args = parser.parse_args()
+    if args.baseline and args.image_rag:
+        parser.error("--baseline is the no-tools ablation floor; it can't be combined with --image-rag")
+    rpm = args.rpm if args.rpm is not None else (5.0 if args.provider == "gemini" else 0.0)
 
     examples = [json.loads(line) for line in open(args.input)]
     if args.limit:
         examples = examples[: args.limit]
 
-    retriever = KnowledgeBaseRetriever()
+    retriever = None if args.baseline else KnowledgeBaseRetriever()
     image_retriever = None
     if args.image_rag:
         from agent.image_retrieval import ImageBankRetriever  # lazy: avoids requiring torch unless used
@@ -42,17 +62,20 @@ def main():
 
     agent = ClassifierAgent(
         retriever,
-        use_rag=not args.no_rag,
+        use_rag=not (args.no_rag or args.baseline),
         image_retriever=image_retriever,
         use_image_rag=args.image_rag,
+        provider=args.provider,
         model=args.model,
         base_url=args.base_url,
+        requests_per_minute=rpm,
     )
 
+    classify = agent.classify_baseline if args.baseline else agent.classify
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
         for ex in tqdm(examples, desc="classifying"):
-            result = agent.classify(ex)
+            result = classify(ex)
             f.write(json.dumps(result) + "\n")
             f.flush()
 
