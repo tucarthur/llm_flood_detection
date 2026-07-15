@@ -36,6 +36,7 @@ KAGGLE_DATASET = "caetanoranieri/river-images-at-sao-carlos"
 KAGGLE_PREFIX = "enoe/enoe2/"  # CSV `path` values are relative to this prefix in the dataset
 
 LABELS = ["low", "medium", "high", "flood"]
+RARE_LABELS = ["medium", "high", "flood"]  # everything except the ~99%-majority 'low'
 
 # Leave-one-season-out CV splits, matching the source paper's own split table
 # exactly (Split 1 tests on 2018-2019, ... Split 4 tests on 2021-2022) -- order

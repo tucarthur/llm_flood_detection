@@ -1,11 +1,15 @@
-"""The classifier agent: a tool-calling loop over a vLLM-served vision-language model
-(via vLLM's OpenAI-compatible chat completions API) that grounds its water-level
+"""The classifier agent: a tool-calling loop over a vision-language model served
+through an OpenAI-compatible chat completions API, grounding its water-level
 classification in RAG retrieval before emitting a final structured answer.
 
-vLLM must be launched with tool-calling enabled for whatever model it's serving, e.g.:
-    vllm serve <model> --enable-auto-tool-choice --tool-call-parser <parser-for-model>
-and the model must support image input (vision-language), since every classification
-call includes the camera frame.
+Two providers are supported (see resolve_provider):
+  - vllm: a self-hosted vLLM server, which must be launched with tool-calling enabled:
+        vllm serve <model> --enable-auto-tool-choice --tool-call-parser <parser-for-model>
+  - gemini: Google's Gemini API via its OpenAI-compatibility endpoint (needs
+    GEMINI_API_KEY; free tier is heavily rate-limited, see --rpm in agent/run.py).
+
+Either way the model must support image input (vision-language), since every
+classification call includes the camera frame.
 """
 from __future__ import annotations
 
@@ -13,18 +17,46 @@ import base64
 import json
 import mimetypes
 import os
+import time
 from pathlib import Path
 
 from openai import OpenAI
 
 from agent.image_retrieval import RETRIEVE_SIMILAR_EXAMPLES_TOOL_SCHEMA, ImageBankRetriever
-from agent.prompts import SUBMIT_CLASSIFICATION_TOOL_SCHEMA, build_system_prompt, build_user_text_block
+from agent.prompts import (
+    SUBMIT_CLASSIFICATION_TOOL_SCHEMA,
+    build_baseline_system_prompt,
+    build_system_prompt,
+    build_user_text_block,
+)
 from agent.retrieval import RETRIEVAL_TOOL_SCHEMA, KnowledgeBaseRetriever
 
-DEFAULT_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1")
-DEFAULT_API_KEY = os.environ.get("VLLM_API_KEY", "EMPTY")  # vLLM ignores this unless an auth proxy requires it
-DEFAULT_MODEL = os.environ.get("VLLM_MODEL", "")
+VALID_LABELS = set(SUBMIT_CLASSIFICATION_TOOL_SCHEMA["input_schema"]["properties"]["classification"]["enum"])
+
+GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 MAX_TURNS = 6
+
+
+def resolve_provider(provider: str, model: str = "", base_url: str = "") -> tuple[str, str, str]:
+    """-> (model, base_url, api_key) for the given provider, filling unset values from
+    env vars. Env is read lazily here (not at import time) so load_dotenv() in the
+    entrypoint takes effect."""
+    if provider == "gemini":
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'gemini' requires GEMINI_API_KEY (set it in .env)")
+        return (
+            model or os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"),
+            base_url or os.environ.get("GEMINI_BASE_URL", GEMINI_OPENAI_BASE_URL),
+            api_key,
+        )
+    if provider == "vllm":
+        return (
+            model or os.environ.get("VLLM_MODEL", ""),
+            base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
+            os.environ.get("VLLM_API_KEY", "EMPTY"),  # vLLM ignores this unless an auth proxy requires it
+        )
+    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm' or 'gemini')")
 
 
 def _image_url_content(image_path: str) -> dict:
@@ -56,27 +88,43 @@ def _to_openai_tool(schema: dict) -> dict:
 class ClassifierAgent:
     def __init__(
         self,
-        retriever: KnowledgeBaseRetriever,
+        retriever: KnowledgeBaseRetriever | None = None,
         use_rag: bool = True,
         image_retriever: ImageBankRetriever | None = None,
         use_image_rag: bool = False,
         client: OpenAI | None = None,
-        model: str = DEFAULT_MODEL,
-        base_url: str = DEFAULT_BASE_URL,
-        api_key: str = DEFAULT_API_KEY,
+        provider: str = "vllm",
+        model: str = "",
+        base_url: str = "",
+        api_key: str = "",
+        requests_per_minute: float = 0.0,
     ):
         self.retriever = retriever
         self.use_rag = use_rag
         self.image_retriever = image_retriever
         self.use_image_rag = use_image_rag
+        if use_rag and retriever is None:
+            raise ValueError("use_rag=True requires a retriever")
         if use_image_rag and image_retriever is None:
             raise ValueError("use_image_rag=True requires an image_retriever")
+        model, base_url, resolved_key = resolve_provider(provider, model, base_url)
         if not model:
             raise ValueError(
                 "model is required -- pass the model name vLLM was launched with, or set VLLM_MODEL"
             )
         self.model = model
-        self.client = client or OpenAI(base_url=base_url, api_key=api_key)
+        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key)
+        self._min_request_interval = 60.0 / requests_per_minute if requests_per_minute else 0.0
+        self._last_request_time = 0.0
+
+    def _create_completion(self, **kwargs):
+        if self._min_request_interval:
+            wait = self._last_request_time + self._min_request_interval - time.monotonic()
+            if wait > 0:
+                time.sleep(wait)
+        response = self.client.chat.completions.create(**kwargs)
+        self._last_request_time = time.monotonic()
+        return response
 
     def _tool_schemas(self) -> list[dict]:
         schemas = [SUBMIT_CLASSIFICATION_TOOL_SCHEMA]
@@ -101,7 +149,7 @@ class ClassifierAgent:
         tool_call_log = []
 
         for _ in range(MAX_TURNS):
-            response = self.client.chat.completions.create(
+            response = self._create_completion(
                 model=self.model,
                 max_tokens=1500,
                 tools=tools,
@@ -161,3 +209,56 @@ class ClassifierAgent:
             "example": example,
             "tool_call_log": tool_call_log,
         }
+
+    def classify_baseline(self, example: dict) -> dict:
+        """Single-shot ablation baseline: one image + text prompt, one completion,
+        no tools and no retrieval. Result schema matches classify() so eval/ code
+        works unchanged (tool_call_log is always empty here)."""
+        messages = [
+            {"role": "system", "content": build_baseline_system_prompt()},
+            {
+                "role": "user",
+                "content": [
+                    _image_url_content(example["image_path"]),
+                    {"type": "text", "text": build_user_text_block(example)},
+                ],
+            },
+        ]
+        response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
+        content = response.choices[0].message.content or ""
+        result = _parse_baseline_response(content)
+        if result is None:
+            return {
+                "classification": "low",
+                "confidence": 0.0,
+                "rationale": f"unparseable baseline response: {content[:500]}",
+                "cited_evidence": [],
+                "example": example,
+                "tool_call_log": [],
+            }
+        return {**result, "example": example, "tool_call_log": []}
+
+
+def _parse_baseline_response(content: str) -> dict | None:
+    """Extract the JSON object from a baseline completion (tolerating markdown fences
+    or stray prose around it). Returns None if there is no valid object to salvage."""
+    start, end = content.find("{"), content.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        parsed = json.loads(content[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict) or parsed.get("classification") not in VALID_LABELS:
+        return None
+    try:
+        confidence = max(0.0, min(1.0, float(parsed.get("confidence", 0.0))))
+    except (TypeError, ValueError):
+        confidence = 0.0
+    cited = parsed.get("cited_evidence")
+    return {
+        "classification": parsed["classification"],
+        "confidence": confidence,
+        "rationale": str(parsed.get("rationale", "")),
+        "cited_evidence": [str(c) for c in cited] if isinstance(cited, list) else [],
+    }
