@@ -135,6 +135,7 @@ class ClassifierAgent:
         return [_to_openai_tool(s) for s in schemas]
 
     def classify(self, example: dict) -> dict:
+        usage = _empty_usage()
         messages = [
             {"role": "system", "content": build_system_prompt(self.use_rag, self.use_image_rag)},
             {
@@ -156,6 +157,7 @@ class ClassifierAgent:
                 tool_choice="auto",
                 messages=messages,
             )
+            _accumulate_usage(usage, response)
             message = response.choices[0].message
             messages.append(message.model_dump(exclude_none=True))
             tool_calls = message.tool_calls or []
@@ -163,7 +165,7 @@ class ClassifierAgent:
             submit_call = next((tc for tc in tool_calls if tc.function.name == "submit_classification"), None)
             if submit_call:
                 result = json.loads(submit_call.function.arguments)
-                return {**result, "example": example, "tool_call_log": tool_call_log}
+                return {**result, "example": example, "tool_call_log": tool_call_log, "model": self.model, "usage": usage}
 
             if not tool_calls:
                 messages.append(
@@ -208,6 +210,8 @@ class ClassifierAgent:
             "cited_evidence": [],
             "example": example,
             "tool_call_log": tool_call_log,
+            "model": self.model,
+            "usage": usage,
         }
 
     def classify_baseline(self, example: dict) -> dict:
@@ -225,18 +229,31 @@ class ClassifierAgent:
             },
         ]
         response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
+        usage = _empty_usage()
+        _accumulate_usage(usage, response)
         content = response.choices[0].message.content or ""
         result = _parse_baseline_response(content)
         if result is None:
-            return {
+            result = {
                 "classification": "low",
                 "confidence": 0.0,
                 "rationale": f"unparseable baseline response: {content[:500]}",
                 "cited_evidence": [],
-                "example": example,
-                "tool_call_log": [],
             }
-        return {**result, "example": example, "tool_call_log": []}
+        return {**result, "example": example, "tool_call_log": [], "model": self.model, "usage": usage}
+
+
+def _empty_usage() -> dict:
+    return {"requests": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def _accumulate_usage(total: dict, response) -> None:
+    total["requests"] += 1
+    u = getattr(response, "usage", None)
+    if u is not None:
+        total["prompt_tokens"] += u.prompt_tokens or 0
+        total["completion_tokens"] += u.completion_tokens or 0
+        total["total_tokens"] += u.total_tokens or 0
 
 
 def _parse_baseline_response(content: str) -> dict | None:
