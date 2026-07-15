@@ -29,12 +29,12 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     parser.add_argument(
         "--provider",
-        choices=["vllm", "gemini"],
+        choices=["vllm", "gemini", "nvidia"],
         default="vllm",
-        help="Inference backend: local vLLM server or the Gemini API (needs GEMINI_API_KEY)",
+        help="Inference backend: local vLLM server, the Gemini API (GEMINI_API_KEY), or NVIDIA NIM (NVIDIA_API_KEY)",
     )
     parser.add_argument(
-        "--model", default="", help="Model name (defaults: VLLM_MODEL for vllm, GEMINI_MODEL or gemini-3.5-flash for gemini)"
+        "--model", default="", help="Model name (defaults: VLLM_MODEL / GEMINI_MODEL / NVIDIA_MODEL per provider)"
     )
     parser.add_argument(
         "--base-url", default="", help="OpenAI-compatible endpoint override (defaults per provider)"
@@ -59,7 +59,9 @@ def main():
     args = parser.parse_args()
     if args.baseline and args.image_rag:
         parser.error("--baseline is the no-tools ablation floor; it can't be combined with --image-rag")
-    rpm = args.rpm if args.rpm is not None else (5.0 if args.provider == "gemini" else 0.0)
+    # provider-default throttles: gemini free tier is 5 req/min; NVIDIA NIM's is ~40,
+    # kept under with headroom. vllm is self-hosted, no throttle.
+    rpm = args.rpm if args.rpm is not None else {"gemini": 5.0, "nvidia": 30.0}.get(args.provider, 0.0)
 
     examples = [json.loads(line) for line in open(args.input)]
     if args.limit:

@@ -51,13 +51,23 @@ def resolve_provider(provider: str, model: str = "", base_url: str = "") -> tupl
             base_url or os.environ.get("GEMINI_BASE_URL", GEMINI_OPENAI_BASE_URL),
             api_key,
         )
+    if provider == "nvidia":
+        api_key = os.environ.get("NVIDIA_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'nvidia' requires NVIDIA_API_KEY (set it in .env)")
+        return (
+            # no default model: the study runs several (see .env.example), so pass --model explicitly
+            model or os.environ.get("NVIDIA_MODEL", ""),
+            base_url or os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+            api_key,
+        )
     if provider == "vllm":
         return (
             model or os.environ.get("VLLM_MODEL", ""),
             base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
             os.environ.get("VLLM_API_KEY", "EMPTY"),  # vLLM ignores this unless an auth proxy requires it
         )
-    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm' or 'gemini')")
+    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm', 'gemini', or 'nvidia')")
 
 
 def _image_url_content(image_path: str) -> dict:
