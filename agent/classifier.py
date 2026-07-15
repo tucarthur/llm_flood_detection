@@ -17,6 +17,7 @@ import base64
 import json
 import mimetypes
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -115,16 +116,19 @@ class ClassifierAgent:
         self.model = model
         self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key)
         self._min_request_interval = 60.0 / requests_per_minute if requests_per_minute else 0.0
-        self._last_request_time = 0.0
+        self._next_request_time = 0.0
+        self._throttle_lock = threading.Lock()  # one agent may be shared across worker threads
 
     def _create_completion(self, **kwargs):
         if self._min_request_interval:
-            wait = self._last_request_time + self._min_request_interval - time.monotonic()
-            if wait > 0:
-                time.sleep(wait)
-        response = self.client.chat.completions.create(**kwargs)
-        self._last_request_time = time.monotonic()
-        return response
+            # Space request *starts* min_request_interval apart globally; sleeping while
+            # holding the lock is intentional -- it makes queued threads inherit the delay.
+            with self._throttle_lock:
+                wait = self._next_request_time - time.monotonic()
+                if wait > 0:
+                    time.sleep(wait)
+                self._next_request_time = time.monotonic() + self._min_request_interval
+        return self.client.chat.completions.create(**kwargs)
 
     def _tool_schemas(self) -> list[dict]:
         schemas = [SUBMIT_CLASSIFICATION_TOOL_SCHEMA]

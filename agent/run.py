@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -44,6 +45,17 @@ def main():
         default=None,
         help="Throttle: max API requests/minute (default: 5 for gemini free tier, unthrottled for vllm)",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Concurrent classification requests; --rpm is still enforced globally across workers",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Append to --out, skipping as many input examples as it already contains lines",
+    )
     args = parser.parse_args()
     if args.baseline and args.image_rag:
         parser.error("--baseline is the no-tools ablation floor; it can't be combined with --image-rag")
@@ -52,6 +64,12 @@ def main():
     examples = [json.loads(line) for line in open(args.input)]
     if args.limit:
         examples = examples[: args.limit]
+
+    already_done = 0
+    if args.resume and Path(args.out).exists():
+        already_done = sum(1 for _ in open(args.out))
+        examples = examples[already_done:]
+        print(f"Resuming: {already_done} results already in {args.out}, {len(examples)} to go", file=sys.stderr)
 
     retriever = None if args.baseline else KnowledgeBaseRetriever()
     image_retriever = None
@@ -73,13 +91,14 @@ def main():
 
     classify = agent.classify_baseline if args.baseline else agent.classify
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    with open(args.out, "w") as f:
-        for ex in tqdm(examples, desc="classifying"):
-            result = classify(ex)
+    # pool.map keeps results in input order regardless of which worker finishes first,
+    # so the output file stays line-aligned with the input (which --resume relies on).
+    with open(args.out, "a" if args.resume else "w") as f, ThreadPoolExecutor(max_workers=args.workers) as pool:
+        for result in tqdm(pool.map(classify, examples), total=len(examples), desc="classifying"):
             f.write(json.dumps(result) + "\n")
             f.flush()
 
-    print(f"Wrote {len(examples)} results to {args.out}", file=sys.stderr)
+    print(f"Wrote {len(examples)} results to {args.out}" + (f" (after {already_done} resumed)" if already_done else ""), file=sys.stderr)
 
 
 if __name__ == "__main__":
