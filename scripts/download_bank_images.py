@@ -36,7 +36,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--images-dir", default="knowledge_base/image_bank_images")
-    parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
 
     bank = pd.read_parquet(BANK_METADATA)

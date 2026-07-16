@@ -24,14 +24,33 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import subprocess
 import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
 
 from data.enoe_images import KAGGLE_DATASET, RARE_LABELS, load_annotations, local_image_path
+
+# Shared across all worker threads so concurrent downloads don't each retry into the
+# same Kaggle rate limit at once -- observed empirically: unthrottled 8-worker bursts
+# eventually draw sustained 429s that don't clear within 3 quick retries.
+_kaggle_throttle_lock = threading.Lock()
+_kaggle_next_request_time = 0.0
+KAGGLE_MIN_REQUEST_INTERVAL = 1.0  # seconds between requests, global across workers
+
+
+def _throttle_kaggle():
+    global _kaggle_next_request_time
+    with _kaggle_throttle_lock:
+        wait = _kaggle_next_request_time - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _kaggle_next_request_time = time.monotonic() + KAGGLE_MIN_REQUEST_INTERVAL
 
 
 def sample_lows_for_season(low_df: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
@@ -61,7 +80,7 @@ def build_test_df(seed: int) -> pd.DataFrame:
     return test_df
 
 
-def download_one(row: pd.Series, images_dir: Path, retries: int = 2) -> tuple[str, bool]:
+def download_one(row: pd.Series, images_dir: Path, retries: int = 5) -> tuple[str, bool]:
     target = local_image_path(row, images_dir)
     if target.exists():
         return str(target), True
@@ -72,11 +91,16 @@ def download_one(row: pd.Series, images_dir: Path, retries: int = 2) -> tuple[st
         "kaggle", "datasets", "download", "-d", KAGGLE_DATASET,
         "-f", row["kaggle_path"], "-p", str(images_dir), "--force",
     ]
-    for _ in range(retries + 1):
+    for attempt in range(retries + 1):
+        _throttle_kaggle()
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0 and downloaded.exists():
             downloaded.rename(target)
             return str(target), True
+        if "429" in result.stderr:
+            # exponential backoff + jitter -- give the rate limit window time to clear
+            # rather than immediately re-hammering it with every other worker
+            time.sleep(min(60, 2**attempt) + random.uniform(0, 1))
     return f"{row['kaggle_path']}: {result.stderr.strip().splitlines()[-1] if result.stderr else 'download failed'}", False
 
 
