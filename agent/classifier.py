@@ -124,7 +124,9 @@ class ClassifierAgent:
                 "model is required -- pass the model name vLLM was launched with, or set VLLM_MODEL"
             )
         self.model = model
-        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key)
+        # 3-minute cap (vs the client's 600s default) so a hung/queued endpoint fails
+        # fast enough to notice instead of silently stalling a whole eval run.
+        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key, timeout=180.0)
         self._min_request_interval = 60.0 / requests_per_minute if requests_per_minute else 0.0
         self._next_request_time = 0.0
         self._throttle_lock = threading.Lock()  # one agent may be shared across worker threads
