@@ -17,6 +17,7 @@ import base64
 import json
 import mimetypes
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -50,13 +51,32 @@ def resolve_provider(provider: str, model: str = "", base_url: str = "") -> tupl
             base_url or os.environ.get("GEMINI_BASE_URL", GEMINI_OPENAI_BASE_URL),
             api_key,
         )
+    if provider == "nvidia":
+        api_key = os.environ.get("NVIDIA_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'nvidia' requires NVIDIA_API_KEY (set it in .env)")
+        return (
+            # no default model: the study runs several (see .env.example), so pass --model explicitly
+            model or os.environ.get("NVIDIA_MODEL", ""),
+            base_url or os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+            api_key,
+        )
+    if provider == "groq":
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'groq' requires GROQ_API_KEY (set it in .env)")
+        return (
+            model or os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"),
+            base_url or os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+            api_key,
+        )
     if provider == "vllm":
         return (
             model or os.environ.get("VLLM_MODEL", ""),
             base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
             os.environ.get("VLLM_API_KEY", "EMPTY"),  # vLLM ignores this unless an auth proxy requires it
         )
-    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm' or 'gemini')")
+    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm', 'gemini', 'nvidia', or 'groq')")
 
 
 def _image_url_content(image_path: str) -> dict:
@@ -113,18 +133,23 @@ class ClassifierAgent:
                 "model is required -- pass the model name vLLM was launched with, or set VLLM_MODEL"
             )
         self.model = model
-        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key)
+        # 3-minute cap (vs the client's 600s default) so a hung/queued endpoint fails
+        # fast enough to notice instead of silently stalling a whole eval run.
+        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key, timeout=180.0)
         self._min_request_interval = 60.0 / requests_per_minute if requests_per_minute else 0.0
-        self._last_request_time = 0.0
+        self._next_request_time = 0.0
+        self._throttle_lock = threading.Lock()  # one agent may be shared across worker threads
 
     def _create_completion(self, **kwargs):
         if self._min_request_interval:
-            wait = self._last_request_time + self._min_request_interval - time.monotonic()
-            if wait > 0:
-                time.sleep(wait)
-        response = self.client.chat.completions.create(**kwargs)
-        self._last_request_time = time.monotonic()
-        return response
+            # Space request *starts* min_request_interval apart globally; sleeping while
+            # holding the lock is intentional -- it makes queued threads inherit the delay.
+            with self._throttle_lock:
+                wait = self._next_request_time - time.monotonic()
+                if wait > 0:
+                    time.sleep(wait)
+                self._next_request_time = time.monotonic() + self._min_request_interval
+        return self.client.chat.completions.create(**kwargs)
 
     def _tool_schemas(self) -> list[dict]:
         schemas = [SUBMIT_CLASSIFICATION_TOOL_SCHEMA]
@@ -135,6 +160,7 @@ class ClassifierAgent:
         return [_to_openai_tool(s) for s in schemas]
 
     def classify(self, example: dict) -> dict:
+        usage = _empty_usage()
         messages = [
             {"role": "system", "content": build_system_prompt(self.use_rag, self.use_image_rag)},
             {
@@ -156,6 +182,7 @@ class ClassifierAgent:
                 tool_choice="auto",
                 messages=messages,
             )
+            _accumulate_usage(usage, response)
             message = response.choices[0].message
             messages.append(message.model_dump(exclude_none=True))
             tool_calls = message.tool_calls or []
@@ -163,7 +190,7 @@ class ClassifierAgent:
             submit_call = next((tc for tc in tool_calls if tc.function.name == "submit_classification"), None)
             if submit_call:
                 result = json.loads(submit_call.function.arguments)
-                return {**result, "example": example, "tool_call_log": tool_call_log}
+                return {**result, "example": example, "tool_call_log": tool_call_log, "model": self.model, "usage": usage}
 
             if not tool_calls:
                 messages.append(
@@ -208,6 +235,8 @@ class ClassifierAgent:
             "cited_evidence": [],
             "example": example,
             "tool_call_log": tool_call_log,
+            "model": self.model,
+            "usage": usage,
         }
 
     def classify_baseline(self, example: dict) -> dict:
@@ -224,19 +253,38 @@ class ClassifierAgent:
                 ],
             },
         ]
-        response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
-        content = response.choices[0].message.content or ""
-        result = _parse_baseline_response(content)
+        usage = _empty_usage()
+        result = None
+        # occasional transient empty/garbled completions happen (observed on NVIDIA NIM);
+        # one retry keeps them from becoming silent fallback rows in a long eval run
+        for _ in range(2):
+            response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
+            _accumulate_usage(usage, response)
+            content = response.choices[0].message.content or ""
+            result = _parse_baseline_response(content)
+            if result is not None:
+                break
         if result is None:
-            return {
+            result = {
                 "classification": "low",
                 "confidence": 0.0,
                 "rationale": f"unparseable baseline response: {content[:500]}",
                 "cited_evidence": [],
-                "example": example,
-                "tool_call_log": [],
             }
-        return {**result, "example": example, "tool_call_log": []}
+        return {**result, "example": example, "tool_call_log": [], "model": self.model, "usage": usage}
+
+
+def _empty_usage() -> dict:
+    return {"requests": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def _accumulate_usage(total: dict, response) -> None:
+    total["requests"] += 1
+    u = getattr(response, "usage", None)
+    if u is not None:
+        total["prompt_tokens"] += u.prompt_tokens or 0
+        total["completion_tokens"] += u.completion_tokens or 0
+        total["total_tokens"] += u.total_tokens or 0
 
 
 def _parse_baseline_response(content: str) -> dict | None:
