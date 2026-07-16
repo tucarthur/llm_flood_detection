@@ -18,7 +18,11 @@ import chromadb
 
 INDEX_DIR = Path(__file__).parent.parent / "knowledge_base" / "image_bank_index"
 COLLECTION_NAME = "flood_image_examples"
-DEFAULT_IMAGES_DIR = Path(__file__).parent.parent / "data" / "raw" / "sample_images"
+# The bank's own images (built by knowledge_base/build_image_bank.ipynb; download
+# locally with `python -m scripts.download_bank_images`) -- NOT data/raw/test_images
+# or sample_images, which only happen to overlap on the bank's "rare" rows and are
+# missing all 796 FPS-selected "low_diverse" exemplars.
+DEFAULT_IMAGES_DIR = Path(__file__).parent.parent / "knowledge_base" / "image_bank_images"
 
 RETRIEVE_SIMILAR_EXAMPLES_TOOL_SCHEMA = {
     "name": "retrieve_similar_examples",
