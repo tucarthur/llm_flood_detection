@@ -61,13 +61,22 @@ def resolve_provider(provider: str, model: str = "", base_url: str = "") -> tupl
             base_url or os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
             api_key,
         )
+    if provider == "groq":
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'groq' requires GROQ_API_KEY (set it in .env)")
+        return (
+            model or os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"),
+            base_url or os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+            api_key,
+        )
     if provider == "vllm":
         return (
             model or os.environ.get("VLLM_MODEL", ""),
             base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
             os.environ.get("VLLM_API_KEY", "EMPTY"),  # vLLM ignores this unless an auth proxy requires it
         )
-    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm', 'gemini', or 'nvidia')")
+    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm', 'gemini', 'nvidia', or 'groq')")
 
 
 def _image_url_content(image_path: str) -> dict:
