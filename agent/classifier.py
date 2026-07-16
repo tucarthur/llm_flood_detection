@@ -244,11 +244,17 @@ class ClassifierAgent:
                 ],
             },
         ]
-        response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
         usage = _empty_usage()
-        _accumulate_usage(usage, response)
-        content = response.choices[0].message.content or ""
-        result = _parse_baseline_response(content)
+        result = None
+        # occasional transient empty/garbled completions happen (observed on NVIDIA NIM);
+        # one retry keeps them from becoming silent fallback rows in a long eval run
+        for _ in range(2):
+            response = self._create_completion(model=self.model, max_tokens=1500, messages=messages)
+            _accumulate_usage(usage, response)
+            content = response.choices[0].message.content or ""
+            result = _parse_baseline_response(content)
+            if result is not None:
+                break
         if result is None:
             result = {
                 "classification": "low",
