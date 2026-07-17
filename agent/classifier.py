@@ -221,6 +221,11 @@ class ClassifierAgent:
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(result)})
 
             if image_followup_content:
+                # Some providers (observed: Mistral via NVIDIA NIM) strictly enforce that a
+                # 'tool' message must be followed by 'assistant', rejecting 'user' directly
+                # after 'tool' with a 400. A minimal synthetic assistant turn bridges this --
+                # confirmed harmless on providers that don't require it (Gemini).
+                messages.append({"role": "assistant", "content": "Reviewing the retrieved reference images now."})
                 messages.append(
                     {
                         "role": "user",
