@@ -8,6 +8,7 @@ data/processed/
 knowledge_base/index/
 knowledge_base/image_bank_index/
 knowledge_base/image_bank_backup/
+knowledge_base/image_bank_images/
 *.egg-info/
 .pytest_cache/
 .DS_Store
