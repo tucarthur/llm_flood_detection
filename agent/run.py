@@ -76,7 +76,7 @@ def main():
         examples = examples[already_done:]
         print(f"Resuming: {already_done} results already in {args.out}, {len(examples)} to go", file=sys.stderr)
 
-    retriever = None if args.baseline else KnowledgeBaseRetriever()
+    retriever = None if (args.baseline or args.no_rag) else KnowledgeBaseRetriever()
     image_retriever = None
     if args.image_rag:
         from agent.image_retrieval import ImageBankRetriever  # lazy: avoids requiring torch unless used
@@ -94,12 +94,11 @@ def main():
         requests_per_minute=rpm,
     )
 
-    classify = agent.classify_baseline if args.baseline else agent.classify
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     # pool.map keeps results in input order regardless of which worker finishes first,
     # so the output file stays line-aligned with the input (which --resume relies on).
     with open(args.out, "a" if args.resume else "w") as f, ThreadPoolExecutor(max_workers=args.workers) as pool:
-        for result in tqdm(pool.map(classify, examples), total=len(examples), desc="classifying"):
+        for result in tqdm(pool.map(agent.classify, examples), total=len(examples), desc="classifying"):
             f.write(json.dumps(result) + "\n")
             f.flush()
 
