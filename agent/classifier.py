@@ -31,6 +31,7 @@ from agent.prompts import (
 from agent.retrieval import KnowledgeBaseRetriever
 
 VALID_LABELS = {"low", "medium", "high", "flood"}
+BINARY_VALID_LABELS = {"flood", "not_flood"}
 
 GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
@@ -104,11 +105,13 @@ class ClassifierAgent:
         base_url: str = "",
         api_key: str = "",
         requests_per_minute: float = 0.0,
+        binary: bool = False,
     ):
         self.retriever = retriever
         self.use_rag = use_rag
         self.image_retriever = image_retriever
         self.use_image_rag = use_image_rag
+        self.binary = binary
         if use_rag and retriever is None:
             raise ValueError("use_rag=True requires a retriever")
         if use_image_rag and image_retriever is None:
@@ -160,16 +163,18 @@ class ClassifierAgent:
             image_content.extend(_image_data_to_content(d) for d in image_payloads)
 
         system_prompt = build_single_shot_prompt(
-            self.use_rag, self.use_image_rag, retrieved_text, retrieved_exemplars_text
+            self.use_rag, self.use_image_rag, retrieved_text, retrieved_exemplars_text, binary=self.binary
         )
         messages = [
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": image_content + [{"type": "text", "text": build_user_text_block(example)}],
+                "content": image_content + [{"type": "text", "text": build_user_text_block(example, binary=self.binary)}],
             },
         ]
 
+        valid_labels = BINARY_VALID_LABELS if self.binary else VALID_LABELS
+        fallback_label = "not_flood" if self.binary else "low"
         usage = _empty_usage()
         result = None
         # occasional transient empty/garbled completions happen (observed on NVIDIA NIM);
@@ -178,12 +183,12 @@ class ClassifierAgent:
             response = self._create_completion(model=self.model, max_tokens=1500, temperature=0, messages=messages)
             _accumulate_usage(usage, response)
             content = response.choices[0].message.content or ""
-            result = _parse_response(content)
+            result = _parse_response(content, valid_labels)
             if result is not None:
                 break
         if result is None:
             result = {
-                "classification": "low",
+                "classification": fallback_label,
                 "confidence": 0.0,
                 "rationale": f"unparseable response: {content[:500]}",
                 "cited_evidence": [],
@@ -210,7 +215,7 @@ def _accumulate_usage(total: dict, response) -> None:
         total["total_tokens"] += u.total_tokens or 0
 
 
-def _parse_response(content: str) -> dict | None:
+def _parse_response(content: str, valid_labels: set[str] = VALID_LABELS) -> dict | None:
     """Extract the JSON object from a completion (tolerating markdown fences or stray
     prose around it). Returns None if there is no valid object to salvage."""
     start, end = content.find("{"), content.rfind("}")
@@ -220,7 +225,7 @@ def _parse_response(content: str) -> dict | None:
         parsed = json.loads(content[start : end + 1])
     except json.JSONDecodeError:
         return None
-    if not isinstance(parsed, dict) or parsed.get("classification") not in VALID_LABELS:
+    if not isinstance(parsed, dict) or parsed.get("classification") not in valid_labels:
         return None
     try:
         confidence = max(0.0, min(1.0, float(parsed.get("confidence", 0.0))))

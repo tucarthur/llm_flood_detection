@@ -56,6 +56,11 @@ def main():
         action="store_true",
         help="Append to --out, skipping as many input examples as it already contains lines",
     )
+    parser.add_argument(
+        "--binary",
+        action="store_true",
+        help="Ablation: collapse low/medium/high into not_flood, classify flood vs not_flood only",
+    )
     args = parser.parse_args()
     if args.baseline and args.image_rag:
         parser.error("--baseline is the no-tools ablation floor; it can't be combined with --image-rag")
@@ -92,6 +97,7 @@ def main():
         model=args.model,
         base_url=args.base_url,
         requests_per_minute=rpm,
+        binary=args.binary,
     )
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
