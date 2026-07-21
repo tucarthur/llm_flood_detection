@@ -56,6 +56,11 @@ def main():
         action="store_true",
         help="Append to --out, skipping as many input examples as it already contains lines",
     )
+    parser.add_argument(
+        "--binary",
+        action="store_true",
+        help="Ablation: collapse low/medium/high into not_flood, classify flood vs not_flood only",
+    )
     args = parser.parse_args()
     if args.baseline and args.image_rag:
         parser.error("--baseline is the no-tools ablation floor; it can't be combined with --image-rag")
@@ -76,7 +81,7 @@ def main():
         examples = examples[already_done:]
         print(f"Resuming: {already_done} results already in {args.out}, {len(examples)} to go", file=sys.stderr)
 
-    retriever = None if args.baseline else KnowledgeBaseRetriever()
+    retriever = None if (args.baseline or args.no_rag) else KnowledgeBaseRetriever()
     image_retriever = None
     if args.image_rag:
         from agent.image_retrieval import ImageBankRetriever  # lazy: avoids requiring torch unless used
@@ -92,14 +97,14 @@ def main():
         model=args.model,
         base_url=args.base_url,
         requests_per_minute=rpm,
+        binary=args.binary,
     )
 
-    classify = agent.classify_baseline if args.baseline else agent.classify
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     # pool.map keeps results in input order regardless of which worker finishes first,
     # so the output file stays line-aligned with the input (which --resume relies on).
     with open(args.out, "a" if args.resume else "w") as f, ThreadPoolExecutor(max_workers=args.workers) as pool:
-        for result in tqdm(pool.map(classify, examples), total=len(examples), desc="classifying"):
+        for result in tqdm(pool.map(agent.classify, examples), total=len(examples), desc="classifying"):
             f.write(json.dumps(result) + "\n")
             f.flush()
 

@@ -1,8 +1,11 @@
 """Grounding-faithfulness check for agent outputs: does each cited_evidence string
-actually correspond to something the agent retrieved via tool calls, or is it
-fabricated/unverifiable? This is an automatic proxy (word-overlap against the tool-call
-log) -- flagged low-overlap citations should be manually spot-checked, not trusted
-outright, per the evaluation plan.
+actually correspond to something present in the retrieved context injected into the
+prompt (text passages and/or image-exemplar descriptions), or is it fabricated/
+unverifiable? This is an automatic proxy (word-overlap against retrieved_context) --
+flagged low-overlap citations should be manually spot-checked, not trusted outright.
+
+Retrieval is always-on per arm (not model-gated), so this checks grounding quality of
+the *rationale*, not whether retrieval happened at all -- see agent/classifier.py.
 """
 from __future__ import annotations
 
@@ -29,13 +32,12 @@ def citation_overlap(citation: str, tool_log_text: str) -> float:
 
 
 def check_faithfulness(agent_output: dict, overlap_threshold: float = 0.5) -> dict:
-    tool_log = agent_output.get("tool_call_log", [])
-    tool_log_text = json.dumps(tool_log)
+    context_text = agent_output.get("retrieved_context", "")
     citations = agent_output.get("cited_evidence", [])
 
     results = []
     for citation in citations:
-        overlap = citation_overlap(citation, tool_log_text)
+        overlap = citation_overlap(citation, context_text)
         results.append({"citation": citation, "overlap": overlap, "grounded": overlap >= overlap_threshold})
 
     n_grounded = sum(r["grounded"] for r in results)
@@ -44,7 +46,7 @@ def check_faithfulness(agent_output: dict, overlap_threshold: float = 0.5) -> di
         "n_grounded": n_grounded,
         "faithfulness_rate": n_grounded / len(citations) if citations else None,
         "citation_details": results,
-        "made_any_tool_calls": len(tool_log) > 0,
+        "had_retrieved_context": len(context_text) > 0,
     }
 
 
@@ -56,7 +58,7 @@ def evaluate_file(agent_results_path: str) -> dict:
         "n_examples": len(rows),
         "mean_faithfulness_rate": sum(rates) / len(rates) if rates else None,
         "examples_with_no_citations": sum(1 for r in per_example if r["n_citations"] == 0),
-        "examples_with_no_tool_calls": sum(1 for r in per_example if not r["made_any_tool_calls"]),
+        "examples_with_no_retrieved_context": sum(1 for r in per_example if not r["had_retrieved_context"]),
         "per_example": per_example,
     }
 
