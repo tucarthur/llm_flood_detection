@@ -1,11 +1,17 @@
 """Grounding-faithfulness check for agent outputs: does each cited_evidence string
-actually correspond to something present in the retrieved context injected into the
-prompt (text passages and/or image-exemplar descriptions), or is it fabricated/
-unverifiable? This is an automatic proxy (word-overlap against retrieved_context) --
-flagged low-overlap citations should be manually spot-checked, not trusted outright.
+actually correspond to something present in the context injected into the prompt (the
+image-exemplar descriptions), or is it fabricated/unverifiable? This is an automatic
+proxy (word-overlap against the injected context) -- flagged low-overlap citations
+should be manually spot-checked, not trusted outright.
 
-Retrieval is always-on per arm (not model-gated), so this checks grounding quality of
-the *rationale*, not whether retrieval happened at all -- see agent/classifier.py.
+Scope note: with text retrieval removed, the only injected context is the exemplar
+description block, which is short and formulaic ("Reference image 2: labeled 'risky',
+daytime shot"). Word-overlap against it is therefore a weak signal, and a low rate here
+is expected rather than damning -- the rationale is supposed to describe the *query*
+image. The question worth answering under the current design is whether the rationale
+correctly invokes the wall-margin / grass-contact threshold, which needs a sampled manual
+read, not this metric. Treat this as a regression check that citations exist and are
+non-degenerate.
 """
 from __future__ import annotations
 
@@ -32,7 +38,9 @@ def citation_overlap(citation: str, tool_log_text: str) -> float:
 
 
 def check_faithfulness(agent_output: dict, overlap_threshold: float = 0.5) -> dict:
-    context_text = agent_output.get("retrieved_context", "")
+    # `exemplar_context` is the current field; `retrieved_context` is what the superseded
+    # text-RAG runs wrote, kept so those files still score.
+    context_text = agent_output.get("exemplar_context") or agent_output.get("retrieved_context", "")
     citations = agent_output.get("cited_evidence", [])
 
     results = []

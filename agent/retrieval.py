@@ -1,4 +1,17 @@
-"""RAG retrieval tool wrapping the Chroma knowledge-base index built in knowledge_base/build_index.py."""
+"""RAG retrieval tool wrapping the Chroma knowledge-base index built in knowledge_base/build_index.py.
+
+RETIRED as an experimental arm -- no longer wired into agent/classifier.py.
+
+Text retrieval was dropped for two reasons. It was not really retrieval: a fixed query
+against a 15-chunk corpus returned a byte-identical passage block on all 1,592 examples,
+so it was a static prompt-augmentation condition. And what it added was redundant, since
+every arm already carries the site criteria inline in the system prompt -- it restated
+them in longer prose, which raised the false-alarm rate without buying flood recall
+(gemma-4-31b: false alarms 0.001 -> 0.036 at equal recall).
+
+Kept in the tree so the superseded textrag_* / textimagerag_* result files can still be
+rebuilt and re-scored, not because the arm is expected to return.
+"""
 from __future__ import annotations
 
 from pathlib import Path

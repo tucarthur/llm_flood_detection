@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source .venv/bin/activate)",
+      "Bash(unzip -p *)",
+      "Bash(awk *)",
+      "Bash(gsettings get *)"
+    ]
+  }
+}

@@ -144,3 +144,65 @@ class ImageBankRetriever:
                 image_payloads.append(payload)
             ex["image_available_locally"] = payload is not None
         return result, image_payloads
+
+
+# Two hand-picked calibration sets (ablation: does a fixed, curated few-shot set that
+# clearly illustrates the low/medium/high/flood *boundaries* beat similarity-based
+# retrieval, which just finds visually-similar frames without teaching the threshold?
+# See ImageBankRetriever above for the similarity-based baseline this is compared
+# against). Each set is one rising/receding water event at a single camera, so the
+# only thing that changes between images is the water level itself -- the clearest
+# possible illustration of "this is the difference between medium/high/flood".
+# Two sets (different seasons) exist so exclude_season can always drop one and keep
+# the other, preserving the same leave-one-season-out discipline as similarity search.
+_FEWSHOT_SETS = {
+    "2018-2019": [
+        {"label": "low", "path": "2019/01/19/20190119_082529-SHOP.jpg", "season": "2018-2019", "place": "SHOP", "is_night": False},
+        {"label": "medium", "path": "2018/11/10/20181110_171815-SHOP.jpg", "season": "2018-2019", "place": "SHOP", "is_night": False},
+        {"label": "high", "path": "2018/11/10/20181110_161626-SHOP.jpg", "season": "2018-2019", "place": "SHOP", "is_night": False},
+        {"label": "flood", "path": "2018/11/10/20181110_163153-SHOP.jpg", "season": "2018-2019", "place": "SHOP", "is_night": False},
+    ],
+    "2021-2022": [
+        {"label": "low", "path": "2022/02/11/20220211_080702-SHOP2.jpg", "season": "2021-2022", "place": "SHOP2", "is_night": False},
+        {"label": "medium", "path": "2021/11/10/20211110_163628-SHOP2.jpg", "season": "2021-2022", "place": "SHOP2", "is_night": False},
+        {"label": "high", "path": "2021/11/10/20211110_164220-SHOP2.jpg", "season": "2021-2022", "place": "SHOP2", "is_night": False},
+        {"label": "flood", "path": "2021/11/10/20211110_165407-SHOP2.jpg", "season": "2021-2022", "place": "SHOP2", "is_night": False},
+    ],
+}
+_FEWSHOT_SET_ORDER = ["2018-2019", "2021-2022"]  # deterministic tie-break when neither matches exclude_season
+
+
+class FixedFewShotExemplarProvider:
+    """Drop-in alternative to ImageBankRetriever: instead of embedding the query image
+    and finding similar frames, always returns the same curated low/medium/high/flood
+    calibration set (see _FEWSHOT_SETS), picking whichever of the two prepared sets
+    doesn't match the current example's season. Exposes the same dispatch() signature
+    so agent/classifier.py doesn't need to know which strategy is in play."""
+
+    def __init__(self, images_dir: Path = DEFAULT_IMAGES_DIR):
+        self.images_dir = images_dir
+
+    def _local_image_data(self, bank_path: str) -> dict | None:
+        local_path = self.images_dir / bank_path.replace("/", "_")
+        if not local_path.exists():
+            return None
+        media_type = mimetypes.guess_type(local_path.name)[0] or "image/jpeg"
+        data = base64.standard_b64encode(local_path.read_bytes()).decode("utf-8")
+        return {"media_type": media_type, "data": data}
+
+    def retrieve_fewshot_examples(self, exclude_season: str) -> dict:
+        chosen_season = next(
+            (s for s in _FEWSHOT_SET_ORDER if s != exclude_season), _FEWSHOT_SET_ORDER[0]
+        )
+        examples = [dict(ex) for ex in _FEWSHOT_SETS[chosen_season]]
+        return {"examples": examples}
+
+    def dispatch(self, tool_name: str, tool_input: dict, *, image_path: str, exclude_season: str) -> tuple[dict, list[dict]]:
+        result = self.retrieve_fewshot_examples(exclude_season)
+        image_payloads = []
+        for ex in result["examples"]:
+            payload = self._local_image_data(ex["path"])
+            if payload:
+                image_payloads.append(payload)
+            ex["image_available_locally"] = payload is not None
+        return result, image_payloads

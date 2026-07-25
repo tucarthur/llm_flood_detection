@@ -13,3 +13,6 @@ knowledge_base/image_bank_images/
 .pytest_cache/
 .DS_Store
 experiments/results/
+experiments/logs/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
