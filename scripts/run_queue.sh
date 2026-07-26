@@ -9,7 +9,11 @@
 # Usage: scripts/run_queue.sh <lane-name> <spec-file>
 #
 # Spec file: one cell per line, '#' comments and blank lines ignored, fields pipe-separated
-#   provider|model|rpm|out_stem|extra agent.run flags
+#   provider|model|rpm|out_stem|input_jsonl|extra agent.run flags
+#
+# input_jsonl may be blank to mean the full evaluation set. It is a per-cell field because
+# the K-shot sweep runs on a 375-row subsample while K=0 cells ran at full 1592, and the
+# completion check needs the right row count for the cell it is checking.
 #
 # Idempotent and restartable: a cell whose output already has $EXPECTED lines is skipped,
 # and an incomplete one is resumed rather than restarted, so relaunching the lane after a
@@ -19,10 +23,9 @@ set -uo pipefail
 LANE="${1:?usage: run_queue.sh <lane-name> <spec-file>}"
 SPEC="${2:?usage: run_queue.sh <lane-name> <spec-file>}"
 
-INPUT="data/processed/test_examples.jsonl"
+DEFAULT_INPUT="data/processed/test_examples.jsonl"
 RESULTS_DIR="experiments/results"
 LOG_DIR="experiments/logs"
-EXPECTED=$(wc -l < "$INPUT")
 MAX_ATTEMPTS=4
 
 mkdir -p "$LOG_DIR" "$RESULTS_DIR"
@@ -30,10 +33,13 @@ LANE_LOG="$LOG_DIR/lane_${LANE}.log"
 
 log() { echo "[$(date -Is)] [$LANE] $*" | tee -a "$LANE_LOG"; }
 
-log "lane starting; spec=$SPEC expected=$EXPECTED rows/cell"
+log "lane starting; spec=$SPEC"
 
-while IFS='|' read -r provider model rpm stem extra; do
+while IFS='|' read -r provider model rpm stem input extra; do
     case "${provider// /}" in ''|'#'*) continue ;; esac
+    INPUT="${input:-$DEFAULT_INPUT}"
+    [ -z "${INPUT// /}" ] && INPUT="$DEFAULT_INPUT"
+    EXPECTED=$(wc -l < "$INPUT")
     out="$RESULTS_DIR/${stem}.jsonl"
     cell_log="$LOG_DIR/${stem}.log"
 
@@ -50,9 +56,11 @@ while IFS='|' read -r provider model rpm stem extra; do
         log "$stem: attempt $attempt/$MAX_ATTEMPTS at $have/$EXPECTED rows $resume"
 
         # shellcheck disable=SC2086 -- $extra and $resume are intentionally word-split
+        # --taxonomy is NOT hardcoded here: it is a per-cell factor and must come from the
+        # spec's flags column, so a spec file fully determines what it reproduces.
         .venv/bin/python -m agent.run \
             --input "$INPUT" --out "$out" \
-            --taxonomy 3class --json-mode schema \
+            --json-mode schema \
             --provider "$provider" --model "$model" --rpm "$rpm" \
             $resume $extra >> "$cell_log" 2>&1
         rc=$?

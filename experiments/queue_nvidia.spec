@@ -8,7 +8,7 @@
 # per cell single-threaded. 12 workers bring that to roughly 20 rows/min while staying
 # under the 30 rpm cap, which the shared throttle enforces regardless of worker count.
 # provider|model|rpm|out_stem|extra flags
-nvidia|nvidia/llama-3.1-nemotron-nano-vl-8b-v1|30|zs_3class_nemotron_nano_vl_8b|--workers 12
-nvidia|mistralai/mistral-small-4-119b-2603|30|zs_3class_mistral_small_4|--workers 12
-nvidia|nvidia/llama-3.1-nemotron-nano-vl-8b-v1|30|zsnaive_3class_nemotron_nano_vl_8b|--workers 12 --no-criteria
-nvidia|mistralai/mistral-small-4-119b-2603|30|zsnaive_3class_mistral_small_4|--workers 12 --no-criteria
+nvidia|nvidia/llama-3.1-nemotron-nano-vl-8b-v1|30|zs_3class_nemotron_nano_vl_8b||--taxonomy 3class --workers 12
+nvidia|mistralai/mistral-small-4-119b-2603|30|zs_3class_mistral_small_4||--taxonomy 3class --workers 12
+nvidia|nvidia/llama-3.1-nemotron-nano-vl-8b-v1|30|zsnaive_3class_nemotron_nano_vl_8b||--taxonomy 3class --workers 12 --no-criteria
+nvidia|mistralai/mistral-small-4-119b-2603|30|zsnaive_3class_mistral_small_4||--taxonomy 3class --workers 12 --no-criteria

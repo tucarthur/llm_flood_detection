@@ -207,6 +207,41 @@ PROMPT_VARIANTS: dict[str, PromptVariant] = {
             "that cannot be traced back to visible evidence in the image{sources_tail}."
         ),
     ),
+    "v4": PromptVariant(
+        scene=(
+            "Setting: a fixed camera monitors water level on Mineirinho Creek in Sao Carlos, "
+            "Brazil. It is mounted on a road bridge and aimed downward into a concrete "
+            "drainage canal. On the far side of the channel, above the canal wall, lies a "
+            "grass embankment. You will receive one photograph from this camera."
+        ),
+        night=(
+            "Some frames are taken after dark and carry streetlight glare strong enough to "
+            "hide the waterline. If that applies, record the limitation explicitly in your "
+            "rationale and lower your confidence instead of guessing with false certainty."
+        ),
+        evidence=(
+            "Support your rationale with specific visual detail{sources}. A classification "
+            "you cannot trace to something actually visible in the photograph is not "
+            "acceptable{sources_tail}."
+        ),
+    ),
+    "v5": PromptVariant(
+        scene=(
+            "You are looking at one photograph from a stationary water-level camera at "
+            "Mineirinho Creek, Sao Carlos, Brazil. The camera looks down from a road bridge "
+            "into a concrete drainage canal, and a grass embankment sits above the canal "
+            "wall on the opposite bank."
+        ),
+        night=(
+            "Glare from the streetlight in frame can wash out the waterline in night-time "
+            "photographs. When that happens, say so in your rationale and reduce your "
+            "confidence rather than asserting a level you cannot actually make out."
+        ),
+        evidence=(
+            "Cite the particular things you can see{sources}. Never give a classification "
+            "that cannot be traced back to visible evidence in the photograph{sources_tail}."
+        ),
+    ),
 }
 
 DEFAULT_VARIANT = "v1"
@@ -246,20 +281,29 @@ def format_exemplars(examples: list[dict], taxonomy: str, kind: str = "reference
         label = map_label(ex["label"], taxonomy)
         lines.append(f"- {noun} image {i}: labeled '{label}', {night} shot.")
 
+    # The attachment order is: these labeled exemplars FIRST, then the frame to classify
+    # LAST. Naming that explicitly is required, not decorative -- without it models answer
+    # about the final exemplar instead of the query (see agent/classifier.py:classify).
     if kind == "reference":
         preamble = (
-            "Attached below are labeled reference photos of this site (visually similar to "
-            "the current frame, from other points in time), ordered from least to most "
-            "severe, for comparison:"
+            f"The first {len(lines)} attached images are LABELED REFERENCE PHOTOS of this "
+            "site from other points in time, visually similar to the frame you must "
+            "classify, ordered from least to most severe. They are context only:"
         )
     else:
         preamble = (
-            "Attached below are labeled example photos of this exact site, ordered from "
-            "least to most severe, showing what each level actually looks like here. They "
-            "are NOT similar to the current frame -- use them only to calibrate where the "
-            "thresholds fall, especially the wall-margin and grass-contact distinctions:"
+            f"The first {len(lines)} attached images are LABELED EXAMPLE PHOTOS of this "
+            "exact site, ordered from least to most severe, showing what each level looks "
+            "like here. They are NOT the frame you must classify and they are NOT similar "
+            "to it -- use them only to calibrate where the thresholds fall, especially the "
+            "wall-margin and grass-contact distinctions:"
         )
-    return preamble + "\n" + "\n".join(lines) + "\n\n"
+    trailer = (
+        f"\nThe LAST attached image (image {len(lines) + 1}) is the frame you must "
+        "classify. Do not describe or classify any of the labeled images above -- they are "
+        "reference material. Every observation you report must come from that final image.\n\n"
+    )
+    return preamble + "\n" + "\n".join(lines) + trailer
 
 
 # --------------------------------------------------------------------------------------
@@ -367,7 +411,7 @@ def build_system_prompt(
     return "".join(parts)
 
 
-def build_user_text_block(example: dict, taxonomy: str = "3class") -> str:
+def build_user_text_block(example: dict, taxonomy: str = "3class", has_exemplars: bool = False) -> str:
     """The per-example user turn.
 
     Deliberately excludes datetime/season/place: the exact date would let the model
@@ -376,4 +420,12 @@ def build_user_text_block(example: dict, taxonomy: str = "3class") -> str:
     because the night-glare guidance legitimately needs it.
     """
     task = TAXONOMY_PROMPTS[taxonomy].task
+    if has_exemplars:
+        # Restated in the user turn as well: the system-prompt statement alone was not
+        # enough to stop weaker models answering about the last exemplar.
+        return (
+            f"{'Nighttime' if example['is_night'] else 'Daytime'} shot.\n\n"
+            "Classify the LAST attached image only -- the one after the labeled reference "
+            f"images. {task}"
+        )
     return f"{'Nighttime' if example['is_night'] else 'Daytime'} shot.\n\n{task}"

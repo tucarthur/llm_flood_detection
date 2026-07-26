@@ -172,6 +172,64 @@ _FEWSHOT_SETS = {
 _FEWSHOT_SET_ORDER = ["2018-2019", "2021-2022"]  # deterministic tie-break when neither matches exclude_season
 
 
+class EpisodeExemplarProvider:
+    """Serves one episode's support set from a manifest built by data/episodes.py.
+
+    This is the provider for the K-shot arm. Unlike ImageBankRetriever it does no
+    embedding and no similarity search: the support set is a random, event-disjoint draw
+    fixed in advance, which is what makes the K curve an episodic average rather than a
+    property of one hand-picked set.
+
+    `exclude_season` selects which fold's support set to use -- it is the query's own
+    season, so the support set returned is always drawn from the other three. Exemplars
+    arrive pre-sorted ascending by severity from the manifest.
+    """
+
+    def __init__(self, manifest_path: str | Path, episode_index: int = 0, images_dir: Path = DEFAULT_IMAGES_DIR):
+        import json
+
+        self.manifest = json.load(open(manifest_path))
+        self.manifest_path = str(manifest_path)
+        if not 0 <= episode_index < len(self.manifest["episodes"]):
+            raise ValueError(
+                f"episode {episode_index} out of range: manifest has "
+                f"{len(self.manifest['episodes'])} episodes"
+            )
+        self.episode_index = episode_index
+        self.supports = self.manifest["episodes"][episode_index]["supports"]
+        self.k = self.manifest["k"]
+        self.images_dir = images_dir
+
+    def _local_image_data(self, bank_path: str) -> dict | None:
+        local_path = self.images_dir / bank_path.replace("/", "_")
+        if not local_path.exists():
+            return None
+        media_type = mimetypes.guess_type(local_path.name)[0] or "image/jpeg"
+        data = base64.standard_b64encode(local_path.read_bytes()).decode("utf-8")
+        return {"media_type": media_type, "data": data}
+
+    def support_paths(self, season: str) -> list[str]:
+        """The exact bank paths used for a fold -- recorded in the run's meta.json so a
+        cell can be traced to the images it actually saw."""
+        return [ex["path"] for ex in self.supports[season]]
+
+    def dispatch(self, tool_name: str, tool_input: dict, *, image_path: str, exclude_season: str) -> tuple[dict, list[dict]]:
+        support = self.supports.get(exclude_season)
+        if support is None:
+            raise KeyError(
+                f"no support set for held-out season {exclude_season!r} in {self.manifest_path}"
+            )
+        examples, payloads = [], []
+        for ex in support:
+            entry = dict(ex)
+            payload = self._local_image_data(entry["path"])
+            if payload:
+                payloads.append(payload)
+            entry["image_available_locally"] = payload is not None
+            examples.append(entry)
+        return {"examples": examples}, payloads
+
+
 class FixedFewShotExemplarProvider:
     """Drop-in alternative to ImageBankRetriever: instead of embedding the query image
     and finding similar frames, always returns the same curated low/medium/high/flood

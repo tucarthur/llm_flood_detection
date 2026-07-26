@@ -240,10 +240,18 @@ class ClassifierAgent:
 
     def classify(self, example: dict) -> dict:
         exemplars_text = ""
-        image_content = [_image_url_content(example["image_path"])]
+        query_content = _image_url_content(example["image_path"])
         if self.use_image_rag:
             exemplars_text, exemplar_content = self._exemplar_context(example)
-            image_content.extend(exemplar_content)
+            # Exemplars FIRST, query LAST. With the query first, models resolve "this
+            # image" to the most recent attachment and answer about the final exemplar
+            # instead: nemotron called 134/150 dry frames 'flood' at K=1, its rationales
+            # describing the flood exemplar ("spilling onto the grass embankment") rather
+            # than the query frame. Ascending-severity ordering put flood last, so the
+            # error was maximally wrong. Query position is load-bearing, not cosmetic.
+            image_content = exemplar_content + [query_content]
+        else:
+            image_content = [query_content]
 
         system_prompt = build_system_prompt(
             taxonomy=self.taxonomy,
@@ -256,7 +264,7 @@ class ClassifierAgent:
             {
                 "role": "user",
                 "content": image_content
-                + [{"type": "text", "text": build_user_text_block(example, self.taxonomy)}],
+                + [{"type": "text", "text": build_user_text_block(example, self.taxonomy, bool(exemplars_text))}],
             },
         ]
 

@@ -83,6 +83,18 @@ def main():
         default=3,
         help="Exemplars attached per call when --image-rag is set",
     )
+    parser.add_argument(
+        "--episodes",
+        default="",
+        help="K-shot arm: path to an episode manifest from data/episodes.py. Implies "
+        "--image-rag with a fixed, event-disjoint support set instead of similarity retrieval",
+    )
+    parser.add_argument(
+        "--episode",
+        type=int,
+        default=0,
+        help="Which episode within --episodes to run (one cell per episode; average across them)",
+    )
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     parser.add_argument(
         "--provider",
@@ -133,7 +145,24 @@ def main():
         print(f"Resuming: {already_done} results already in {args.out}, {len(examples)} to go", file=sys.stderr)
 
     image_retriever = None
-    if args.image_rag:
+    episode_meta = {}
+    if args.episodes:
+        from agent.image_retrieval import EpisodeExemplarProvider
+
+        image_retriever = EpisodeExemplarProvider(args.episodes, args.episode)
+        # The support set is a fixed calibration set, not similarity-retrieved, so the
+        # prompt must frame it as such (see agent/prompts.py:format_exemplars).
+        args.image_rag = True
+        args.image_rag_mode = "fewshot"
+        args.n_exemplars = image_retriever.k
+        episode_meta = {
+            "episodes_manifest": args.episodes,
+            "episode": args.episode,
+            "k": image_retriever.k,
+            # exact images per fold, so a cell is traceable to what it actually saw
+            "support_paths": {s: image_retriever.support_paths(s) for s in image_retriever.supports},
+        }
+    elif args.image_rag:
         if args.image_rag_mode == "fewshot":
             from agent.image_retrieval import FixedFewShotExemplarProvider
 
@@ -222,6 +251,7 @@ def main():
         "wall_clock_s": round(time.monotonic() - started_monotonic, 1),
         "git_commit": _git_commit(),
         **agent.config(),
+        **episode_meta,
     }
     meta_path = out_path.with_suffix(out_path.suffix + ".meta.json")
     with open(meta_path, "w") as f:

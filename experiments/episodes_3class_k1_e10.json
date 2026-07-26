@@ -1,0 +1,1342 @@
+{
+  "taxonomy": "3class",
+  "k": 1,
+  "n_episodes": 10,
+  "seed": 42,
+  "max_k_supported": 6,
+  "images_dir": "knowledge_base/image_bank_images",
+  "missing_images": 0,
+  "created_at": "2026-07-25T17:26:59.798757+00:00",
+  "episodes": [
+    {
+      "episode": 0,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/19/20200119_161247-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2020-01-19|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/12/05/20211205_183030-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_191204-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2018/12/24/20181224_180110-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2018-12-24|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/01/19/20190119_000115-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2019-01-19|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_164720-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/02/24/20220224_123633-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-24|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/01/11/20220111_135310-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-11|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/12/14/20211214_180057-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/11/26/20201126_055032-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/01/10/20210110_183625-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-01-10|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/13/20201113_191924-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-13|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 1,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/11/25/20201125_231619-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-25|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/01/11/20220111_134121-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-11|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_190605-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/02/26/20210226_175943-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2020/12/29/20201229_174155-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2020-12-29|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_164720-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/02/05/20220205_205207-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2022-02-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2018/12/01/20181201_104722-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-12-01|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2022/02/01/20220201_141852-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-01|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2019/11/05/20191105_061822-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2019-11-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2018/12/26/20181226_163218-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-12-26|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_183037-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 2,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/14/20200114_181828-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-14|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/02/02/20210202_161905-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/11/18/20211118_171143-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-18|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/12/23/20211223_024853-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-23|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/12/13/20201213_010237-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-13|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/02/02/20210202_151222-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/11/26/20211126_011613-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-11-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/01/11/20220111_134121-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-11|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2022/02/01/20220201_141258-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-01|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/17/20200117_221442-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-17|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/01/20/20200120_160707-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2020-01-20|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/02/02/20210202_152411-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 3,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/16/20200116_201247-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-16|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/01/11/20220111_130005-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-11|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/02/02/20210202_151222-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/12/04/20211204_014330-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-04|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2021/01/02/20210102_131206-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-01-02|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/13/20201113_193110-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-13|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/12/21/20211221_174657-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-12-21|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/02/16/20220216_172946-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-16|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2019/11/05/20191105_212037-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-11-05|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/12/20/20201220_094704-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2020-12-20|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2018/12/02/20181202_015433-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2018-12-02|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_190605-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 4,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/02/03/20210203_201942-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-02-03|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2022/01/26/20220126_192939-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2022-01-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2022/02/01/20220201_140058-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-01|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/12/01/20201201_213638-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-01|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/11/19/20211119_011615-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-11-19|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/12/14/20211214_175905-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/01/20/20220120_190007-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2022-01-20|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2022/01/26/20220126_200052-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2022-01-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/12/14/20211214_180057-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/11/16/20201116_055728-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-16|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2020/12/18/20201218_001449-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-18|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_184823-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 5,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/02/09/20210209_180056-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-02-09|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/02/25/20210225_004205-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-02-25|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2019/11/05/20191105_211401-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-11-05|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/12/03/20201203_200656-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-03|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2018/12/26/20181226_160058-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-12-26|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/11/18/20211118_170550-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-18|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/11/12/20211112_230925-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-11-12|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/12/05/20211205_181254-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/12/14/20211214_180057-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/12/21/20201221_213328-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-21|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/12/05/20201205_192954-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_164720-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 6,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/01/06/20220106_173624-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-06|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/11/26/20211126_080702-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-26|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_183630-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/02/24/20220224_123633-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-24|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2019/01/25/20190125_213906-SHOP2.jpg",
+            "season": "2018-2019",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-01-25|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/02/02/20210202_154151-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/01/30/20220130_062832-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-01-30|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/01/15/20190115_052306-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2019-01-15|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_164720-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2019/11/06/20191106_215339-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-11-06|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/01/19/20190119_000115-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2019-01-19|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/01/12/20200112_202943-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-12|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 7,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/29/20200129_181915-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-29|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/02/25/20210225_004854-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-02-25|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2022/02/01/20220201_141258-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2022-02-01|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/01/17/20210117_062138-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-01-17|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/12/27/20201227_233026-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-27|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_181851-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/01/17/20200117_060804-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2020-01-17|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2018/12/23/20181223_015558-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2018-12-23|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/12/14/20211214_180057-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/01/02/20210102_123636-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-01-02|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2020/12/18/20201218_000758-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-18|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/02/02/20210202_153004-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 8,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2022/02/14/20220214_201850-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2022-02-14|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/11/18/20201118_023518-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-18|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/11/18/20211118_165405-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-18|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/01/30/20210130_035054-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-01-30|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2020/12/14/20201214_035036-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-14|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_185417-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/12/14/20211214_174126-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-12-14|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/12/09/20191209_191632-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-12-09|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_163153-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2018/12/19/20181219_052311-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2018-12-19|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/11/05/20191105_221441-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2019-11-05|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/01/12/20200112_210251-SHOP2.jpg",
+            "season": "2019-2020",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-01-12|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    },
+    {
+      "episode": 9,
+      "supports": {
+        "2018-2019": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/02/18/20210218_190007-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-02-18|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "high",
+            "tax_label": "risky",
+            "path": "2021/02/02/20210202_150627-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-02-02|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/11/18/20211118_171736-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-18|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2019-2020": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/12/08/20201208_015727-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-12-08|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2021/12/31/20211231_163030-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-12-31|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2021/11/18/20211118_171143-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": false,
+            "event": "2021-11-18|SHOP2",
+            "image_available_locally": true
+          }
+        ],
+        "2020-2021": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2021/11/08/20211108_202140-SHOP2.jpg",
+            "season": "2021-2022",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2021-11-08|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2019/01/19/20190119_000115-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2019-01-19|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2018/11/10/20181110_163153-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": false,
+            "event": "2018-11-10|SHOP",
+            "image_available_locally": true
+          }
+        ],
+        "2021-2022": [
+          {
+            "label": "low",
+            "tax_label": "no_risk",
+            "path": "2020/11/12/20201112_225602-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-12|SHOP2",
+            "image_available_locally": true
+          },
+          {
+            "label": "medium",
+            "tax_label": "risky",
+            "path": "2018/12/23/20181223_020058-SHOP.jpg",
+            "season": "2018-2019",
+            "place": "SHOP",
+            "is_night": true,
+            "event": "2018-12-23|SHOP",
+            "image_available_locally": true
+          },
+          {
+            "label": "flood",
+            "tax_label": "flood",
+            "path": "2020/11/26/20201126_181851-SHOP2.jpg",
+            "season": "2020-2021",
+            "place": "SHOP2",
+            "is_night": true,
+            "event": "2020-11-26|SHOP2",
+            "image_available_locally": true
+          }
+        ]
+      }
+    }
+  ]
+}

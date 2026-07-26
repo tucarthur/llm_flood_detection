@@ -16,3 +16,6 @@ experiments/results/
 experiments/logs/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# LaTeX sources (kept out of version control at the author's request)
+paper/
