@@ -8,24 +8,27 @@
 # (hard 400 on multi-image, 0 flood predictions in 24 frames), mistral-small-4 (0.000 flood
 # recall), deepseek-v4-pro (404), qwen3.5-122b (410 mid-study), llama-4-scout (404).
 #
-# Rate settings are measured, not guessed. Concurrency triggers 429s hard on this endpoint:
-# 8 workers gave 47% RateLimitError, 16 workers 84%. At rpm 10 with 4 workers the error rate
-# is zero. Mean latency is ~63s per call (6x gemma-4-31b), so throughput is latency-bound at
-# roughly 4 rows/min regardless of the cap: ~6.5h per full-n cell, ~1.5h per subsample cell.
+# Rate settings are measured, not guessed -- and the earlier measurement was wrong. A short
+# pilot put the error rate at zero for rpm 10 / 4 workers, but over full-length cells that
+# setting produced 22-40% RateLimitError placeholders (359/1592 on zs, 631/1592 on zsnaive).
+# Mean latency is ~63s per call, so four workers self-limit to ~3.8 req/min and the rpm 10 cap
+# never bound: the concurrency was the whole problem. rpm 3 with 2 workers repaired ~1,900
+# rows at a 1-8% first-pass residual, so that is the setting here. It yields ~2.5 rows/min,
+# i.e. ~2.5h per subsample cell -- slower per row, but without the rework.
 #
 # Ordered by value: the two full-n zero-shot cells feed the paper's main comparison, then the
 # sensitivity sweep (needed before any of its criteria effects can be interpreted), then
 # K-shot last since K=1 and K=2 already degrade on both Gemma models.
 # provider|model|rpm|out_stem|input_jsonl|extra flags
-nvidia|minimaxai/minimax-m3|10|zs_3class_minimax_m3||--taxonomy 3class --workers 4
-nvidia|minimaxai/minimax-m3|10|zsnaive_3class_minimax_m3||--taxonomy 3class --workers 4 --no-criteria
-nvidia|minimaxai/minimax-m3|10|sens_v2_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v2 --workers 4
-nvidia|minimaxai/minimax-m3|10|sens_v3_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v3 --workers 4
-nvidia|minimaxai/minimax-m3|10|sens_v4_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v4 --workers 4
-nvidia|minimaxai/minimax-m3|10|sens_v5_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v5 --workers 4
-nvidia|minimaxai/minimax-m3|10|k1_e0_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 0 --workers 4
-nvidia|minimaxai/minimax-m3|10|k1_e1_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 1 --workers 4
-nvidia|minimaxai/minimax-m3|10|k1_e2_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 2 --workers 4
-nvidia|minimaxai/minimax-m3|10|k2_e0_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 0 --workers 4
-nvidia|minimaxai/minimax-m3|10|k2_e1_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 1 --workers 4
-nvidia|minimaxai/minimax-m3|10|k2_e2_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 2 --workers 4
+nvidia|minimaxai/minimax-m3|3|zs_3class_minimax_m3||--taxonomy 3class --workers 2
+nvidia|minimaxai/minimax-m3|3|zsnaive_3class_minimax_m3||--taxonomy 3class --workers 2 --no-criteria
+nvidia|minimaxai/minimax-m3|3|sens_v2_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v2 --workers 2
+nvidia|minimaxai/minimax-m3|3|sens_v3_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v3 --workers 2
+nvidia|minimaxai/minimax-m3|3|sens_v4_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v4 --workers 2
+nvidia|minimaxai/minimax-m3|3|sens_v5_sub_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --prompt-variant v5 --workers 2
+nvidia|minimaxai/minimax-m3|3|k1_e0_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 0 --workers 2
+nvidia|minimaxai/minimax-m3|3|k1_e1_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 1 --workers 2
+nvidia|minimaxai/minimax-m3|3|k1_e2_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k1_e3.json --episode 2 --workers 2
+nvidia|minimaxai/minimax-m3|3|k2_e0_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 0 --workers 2
+nvidia|minimaxai/minimax-m3|3|k2_e1_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 1 --workers 2
+nvidia|minimaxai/minimax-m3|3|k2_e2_minimax_m3|data/processed/kshot_subsample.jsonl|--taxonomy 3class --episodes experiments/episodes_3class_k2_e3.json --episode 2 --workers 2
