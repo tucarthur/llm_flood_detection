@@ -29,12 +29,16 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 from tqdm import tqdm
 
 from agent.classifier import ClassifierAgent
+
+# Repairs are flushed to disk every this many successes.
+CHECKPOINT_EVERY = 25
 
 
 def load_meta(results_path: Path) -> dict:
@@ -44,11 +48,24 @@ def load_meta(results_path: Path) -> dict:
     return json.load(open(meta_path))
 
 
-def build_agent(config: dict, provider: str, model: str, rpm: float) -> ClassifierAgent:
-    """Rebuild the exact agent the cell was run with."""
+def build_agent(config: dict, provider: str, model: str, rpm: float, meta: dict | None = None) -> ClassifierAgent:
+    """Rebuild the exact agent the cell was run with.
+
+    An episode-manifest cell records `image_rag: "fewshot"` in its per-row config, which is
+    indistinguishable from a hand-curated calibration cell by config alone. The manifest path
+    and episode index live only in the cell's .meta.json sidecar, so they must be consulted
+    here -- rebuilding from the config alone would silently substitute a completely different
+    support set and corrupt the repaired rows.
+    """
+    meta = meta or {}
     image_rag = config.get("image_rag")
     image_retriever = None
-    if image_rag == "fewshot":
+    if meta.get("episodes_manifest"):
+        from agent.image_retrieval import EpisodeExemplarProvider
+
+        image_retriever = EpisodeExemplarProvider(meta["episodes_manifest"], meta.get("episode", 0))
+        print(f"episode support set: {meta['episodes_manifest']} episode {meta.get('episode', 0)}")
+    elif image_rag == "fewshot":
         from agent.image_retrieval import FixedFewShotExemplarProvider
 
         image_retriever = FixedFewShotExemplarProvider()
@@ -91,6 +108,12 @@ def main():
         "because the endpoint was saturated",
     )
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument(
+        "--error-pause",
+        type=float,
+        default=30.0,
+        help="Seconds to wait after a raised provider error, which arrive in bursts",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Report what would be retried, change nothing")
     args = parser.parse_args()
 
@@ -132,33 +155,66 @@ def main():
     model = rows[targets[0]].get("model") or meta.get("model")
     print(f"provider={provider} model={model} config={config}")
 
-    agent = build_agent(config, provider, model, args.rpm)
+    agent = build_agent(config, provider, model, args.rpm, meta)
     from concurrent.futures import ThreadPoolExecutor
 
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        repaired = list(
-            tqdm(
-                pool.map(agent.classify, [rows[i]["example"] for i in targets]),
-                total=len(targets),
-                desc="re-classifying",
-            )
-        )
+    # The backup is taken BEFORE any writing, so it holds the cell as it was on entry
+    # regardless of how far the run gets.
+    shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
+
+    def write_back() -> None:
+        tmp = path.with_suffix(".tmp")
+        with open(tmp, "w") as f:
+            for r in rows:
+                f.write(json.dumps(r) + "\n")
+        tmp.rename(path)
+
+    errors: list[str] = []
+
+    def attempt(index: int):
+        """Classify one row, turning a raised provider error into a kept placeholder.
+
+        `agent.classify` handles the failure modes it knows about, but an error the SDK
+        re-raises after exhausting its own retries -- a sustained 429 on a throttled
+        endpoint, in practice -- propagates out of the worker. Letting it escape used to
+        kill the whole cell, and since the write-back happened only after every row had
+        finished, it discarded every repair made up to that point: three cells crashed at
+        30-50% and saved nothing. A row that fails here keeps its placeholder and is
+        retried by the next invocation, which is what this script's contract has always
+        said it does.
+        """
+        try:
+            return index, agent.classify(rows[index]["example"])
+        except Exception as exc:  # noqa: BLE001 -- any provider error must not end the run
+            errors.append(f"{type(exc).__name__}: {exc}")
+            # 429s arrive in bursts, so pausing after one keeps the next few rows from
+            # being spent against a window that has not reopened yet.
+            time.sleep(args.error_pause)
+            return index, None
 
     fixed = 0
-    for i, result in zip(targets, repaired):
-        if not result["parse_failed"] and not result.get("api_error"):
-            rows[i] = result
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        for index, result in tqdm(
+            pool.map(attempt, targets), total=len(targets), desc="re-classifying"
+        ):
+            if result is None or result["parse_failed"] or result.get("api_error"):
+                continue
+            rows[index] = result
             fixed += 1
+            # Checkpoint, so an interruption costs at most CHECKPOINT_EVERY repairs
+            # rather than the entire run.
+            if fixed % CHECKPOINT_EVERY == 0:
+                write_back()
 
-    shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
-    tmp = path.with_suffix(".tmp")
-    with open(tmp, "w") as f:
-        for r in rows:
-            f.write(json.dumps(r) + "\n")
-    tmp.rename(path)
+    write_back()
 
     still_failing = len(targets) - fixed
     print(f"repaired {fixed}/{len(targets)} (still failing: {still_failing}); backup at {path}.bak")
+    if errors:
+        counts: dict[str, int] = {}
+        for e in errors:
+            counts[e.split(":")[0]] = counts.get(e.split(":")[0], 0) + 1
+        print(f"raised errors (row kept its placeholder): {counts}")
     if still_failing:
         print("Rerun to retry the remainder, or report the residual rate with the cell's metrics.")
 
