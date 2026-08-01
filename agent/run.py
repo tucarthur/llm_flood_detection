@@ -98,12 +98,15 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Only run the first N examples")
     parser.add_argument(
         "--provider",
-        choices=["vllm", "gemini", "nvidia", "groq"],
+        choices=["vllm", "gemini", "nvidia", "groq", "openrouter"],
         default="vllm",
-        help="Inference backend: local vLLM server, Gemini API, NVIDIA NIM, or Groq (each needs its <PROVIDER>_API_KEY)",
+        help="Inference backend: local vLLM server, Gemini API, NVIDIA NIM, Groq, or OpenRouter "
+             "(each needs its <PROVIDER>_API_KEY)",
     )
     parser.add_argument(
-        "--model", default="", help="Model name (defaults: VLLM_MODEL / GEMINI_MODEL / NVIDIA_MODEL / GROQ_MODEL per provider)"
+        "--model", default="",
+        help="Model name (defaults: VLLM_MODEL / GEMINI_MODEL / NVIDIA_MODEL / GROQ_MODEL / "
+             "OPENROUTER_MODEL per provider; OpenRouter ids are namespaced, e.g. vendor/model)"
     )
     parser.add_argument(
         "--base-url", default="", help="OpenAI-compatible endpoint override (defaults per provider)"
@@ -132,7 +135,12 @@ def main():
     # first (~2.4k tokens per vision request -> ~12/min), and it also caps at 1,000
     # requests/DAY -- long groq runs must split across days (--resume). vllm is
     # self-hosted, no throttle.
-    rpm = args.rpm if args.rpm is not None else {"gemini": 5.0, "nvidia": 30.0, "groq": 12.0}.get(args.provider, 0.0)
+    # OpenRouter is paid rather than free-tier, so its ceiling is the model's own rather than a
+    # daily quota; 20 is a deliberately unambitious default -- pass --rpm to raise it once a
+    # cell has demonstrated a clean first pass at the payload size in use.
+    rpm = args.rpm if args.rpm is not None else {
+        "gemini": 5.0, "nvidia": 30.0, "groq": 12.0, "openrouter": 20.0
+    }.get(args.provider, 0.0)
 
     examples = [json.loads(line) for line in open(args.input)]
     if args.limit:

@@ -50,6 +50,7 @@ from agent.prompts import (
 from data.taxonomy import FALLBACK_LABEL, labels_for
 
 GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 JSON_MODES = ("off", "object", "schema")
 
@@ -98,13 +99,48 @@ def resolve_provider(provider: str, model: str = "", base_url: str = "") -> tupl
             base_url or os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
             api_key,
         )
+    if provider == "openrouter":
+        api_key = os.environ.get("OPENROUTER_API_KEY", "")
+        if not api_key:
+            raise ValueError("provider 'openrouter' requires OPENROUTER_API_KEY (set it in .env)")
+        return (
+            # No default model. OpenRouter ids are namespaced (`vendor/model`) and the same
+            # weights are reachable under several ids with different pricing and, in some
+            # cases, different serving stacks -- so the id must be passed explicitly and is
+            # recorded verbatim in every result row.
+            model or os.environ.get("OPENROUTER_MODEL", ""),
+            base_url or os.environ.get("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
+            api_key,
+        )
     if provider == "vllm":
         return (
             model or os.environ.get("VLLM_MODEL", ""),
             base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
             os.environ.get("VLLM_API_KEY", "EMPTY"),  # vLLM ignores this unless an auth proxy requires it
         )
-    raise ValueError(f"unknown provider: {provider!r} (expected 'vllm', 'gemini', 'nvidia', or 'groq')")
+    raise ValueError(
+        f"unknown provider: {provider!r} "
+        "(expected 'vllm', 'gemini', 'nvidia', 'groq', or 'openrouter')"
+    )
+
+
+def provider_headers(provider: str) -> dict:
+    """Extra HTTP headers a provider wants, beyond auth.
+
+    OpenRouter uses HTTP-Referer and X-Title for request attribution. Both are optional and
+    the API works without them; they are sent only when the corresponding env vars are set,
+    so nothing about this study's identity leaks into requests by default.
+    """
+    if provider != "openrouter":
+        return {}
+    headers = {}
+    referer = os.environ.get("OPENROUTER_REFERER", "")
+    title = os.environ.get("OPENROUTER_TITLE", "")
+    if referer:
+        headers["HTTP-Referer"] = referer
+    if title:
+        headers["X-Title"] = title
+    return headers
 
 
 def _image_url_content(image_path: str) -> dict:
@@ -164,7 +200,12 @@ class ClassifierAgent:
         self.model = model
         # 3-minute cap (vs the client's 600s default) so a hung/queued endpoint fails
         # fast enough to notice instead of silently stalling a whole eval run.
-        self.client = client or OpenAI(base_url=base_url, api_key=api_key or resolved_key, timeout=180.0)
+        self.client = client or OpenAI(
+            base_url=base_url,
+            api_key=api_key or resolved_key,
+            timeout=180.0,
+            default_headers=provider_headers(provider) or None,
+        )
         self._min_request_interval = 60.0 / requests_per_minute if requests_per_minute else 0.0
         self._next_request_time = 0.0
         self._throttle_lock = threading.Lock()  # one agent may be shared across worker threads
